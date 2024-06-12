@@ -1,9 +1,10 @@
 'use client';
-import { navLinks } from '@/lib/constant';
-import { UserButton } from '@clerk/nextjs';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { UserButton } from '@clerk/nextjs';
+
+import { navLinks } from '@/lib/constant';
 
 export default function LeftSideBar() {
   const pathname = usePathname();
@@ -16,7 +17,7 @@ export default function LeftSideBar() {
           <Link
             href={link.url}
             key={link.label}
-            className={`flex gap-4 text-body-medium ${
+            className={`flex items-center gap-4 text-body-medium ${
               pathname === link.url ? 'text-blue-1' : 'text-gray-1'
             }`}
           >
