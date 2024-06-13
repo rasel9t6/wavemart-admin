@@ -35,7 +35,7 @@ export default function CollectionPage() {
         </Button>
       </div>
       <Separator className="my-4 bg-gray-1" />
-      <DataTable columns={columns} data={collections} />
+      <DataTable columns={columns} data={collections} searchKey='title' />
     </div>
   );
 }
