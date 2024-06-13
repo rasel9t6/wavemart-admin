@@ -20,34 +20,44 @@ import ImageUpload from '../custom-ui/ImageUpload';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import Delete from '../custom-ui/Delete';
 
 const formSchema = z.object({
-  title: z.string().min(5).max(20),
-  description: z.string().min(10).max(500).trim(),
+  title: z.string().min(3).max(20),
+  description: z.string().min(10).max(1000).trim(),
   image: z.string(),
 });
 
-export default function CollectionForm() {
+export default function CollectionForm({
+  initialData,
+}: {
+  initialData?: CollectionType | null;
+}) {
   const [loading, setLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      image: '',
-    },
+    defaultValues: initialData
+      ? initialData
+      : {
+          title: '',
+          description: '',
+          image: '',
+        },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setLoading(true);
-      const res = await fetch('/api/collections', {
+      const url = initialData
+        ? `/api/collections/${initialData._id}`
+        : '/api/collections';
+      const res = await fetch(url, {
         method: 'POST',
         body: JSON.stringify(values),
       });
       if (res.ok) {
         setLoading(false);
-        toast.success('Collection created');
+        toast.success(`Collection ${initialData ? 'updated' : 'created'}`);
         router.push('/collections');
       }
     } catch (error) {
@@ -58,7 +68,14 @@ export default function CollectionForm() {
   const router = useRouter();
   return (
     <div className="p-10">
-      <p className="text-heading2-bold">Create Collection</p>
+      {initialData ? (
+        <div className="flex items-center justify-between">
+          <p className="text-heading2-bold">Edit Collection</p>
+          <Delete id={initialData._id} />
+        </div>
+      ) : (
+        <p className="text-heading2-bold">Create Collection</p>
+      )}
       <Separator className="mb-7 mt-4 bg-gray-1" />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
