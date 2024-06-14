@@ -34,6 +34,7 @@ export default function CollectionForm({
   initialData?: CollectionType | null;
 }) {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData
@@ -65,7 +66,15 @@ export default function CollectionForm({
       toast.success('Something went wrong! Please try again');
     }
   }
-  const router = useRouter();
+  const handleKeyPress = (
+    e:
+      | React.KeyboardEvent<HTMLInputElement>
+      | React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
   return (
     <div className="p-10">
       {initialData ? (
@@ -86,7 +95,11 @@ export default function CollectionForm({
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Write your product title..." {...field} />
+                  <Input
+                    placeholder="Write your product title..."
+                    {...field}
+                    onKeyDown={handleKeyPress}
+                  />
                 </FormControl>
                 <FormMessage className="text-red-1" />
               </FormItem>
@@ -103,6 +116,7 @@ export default function CollectionForm({
                     placeholder="Write your product description..."
                     {...field}
                     rows={5}
+                    onKeyDown={handleKeyPress}
                   />
                 </FormControl>
                 <FormMessage className="text-red-1" />

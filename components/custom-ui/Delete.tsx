@@ -16,7 +16,6 @@ import { Trash } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
 
 export default function Delete({ id }: { id: string }) {
   const [loading, setLoading] = useState(false);
@@ -33,7 +32,7 @@ export default function Delete({ id }: { id: string }) {
         setLoading(false);
         toast.success('Collection deleted');
         // router.push('/collections');
-        // window.location.href = '/collections';
+        window.location.href = '/collections';
       } else {
         // Handle non-OK responses appropriately
         console.error('Collection deletion failed:', await res.text());
