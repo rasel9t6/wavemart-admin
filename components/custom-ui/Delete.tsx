@@ -17,7 +17,7 @@ import { Button } from '../ui/button';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
-export default function Delete({ id }: { id: string }) {
+export default function Delete({ id, item }: { id: string; item: string }) {
   const [loading, setLoading] = useState(false);
   // const router = useRouter();
   async function onDelete() {

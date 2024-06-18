@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 
 import DataTable from '@/components/custom-ui/DataTable';
-import { columns } from './CollectionColumns';
+import { columns } from '../../../components/collections/CollectionColumns';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
