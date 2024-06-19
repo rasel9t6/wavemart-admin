@@ -19,27 +19,23 @@ import toast from 'react-hot-toast';
 
 export default function Delete({ id, item }: { id: string; item: string }) {
   const [loading, setLoading] = useState(false);
-  // const router = useRouter();
   async function onDelete() {
     try {
       setLoading(true);
-
-      const res = await fetch(`/api/collections/${id}`, {
+      const itemType = item === 'product' ? 'products' : 'collections';
+      const res = await fetch(`/api/${itemType}/${id}`, {
         method: 'DELETE',
       });
 
       if (res.ok) {
         setLoading(false);
-        toast.success('Collection deleted');
-        // router.push('/collections');
-        window.location.href = '/collections';
+        toast.success(`${item} deleted`);
       } else {
-        // Handle non-OK responses appropriately
-        console.error('Collection deletion failed:', await res.text());
-        toast.error('Collection deletion failed. Please try again.');
+        console.error(`${item} deletion failed`, await res.text());
+        toast.error(`${item} deletion failed.Please try again.`);
       }
     } catch (error) {
-      console.error('[collection_DELETE]', error);
+      console.error(`[${item}]_DELETE`, error);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -59,8 +55,8 @@ export default function Delete({ id, item }: { id: string; item: string }) {
             Are you absolutely sure?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            collection.
+            {`This action cannot be undone. This will permanently delete your
+            ${item}.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

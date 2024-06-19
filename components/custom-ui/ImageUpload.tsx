@@ -24,6 +24,7 @@ export default function ImageUpload({
           <div className="relative h-[200px] w-[200px]" key={url}>
             <div className="absolute right-0 top-0 z-10">
               <Button
+                type="button"
                 onClick={() => onRemove(url)}
                 size="sm"
                 className="bg-red-1 text-white"
@@ -43,7 +44,11 @@ export default function ImageUpload({
       </div>
       <CldUploadWidget uploadPreset="ucxtkf5j" onSuccess={onUpload}>
         {({ open }) => (
-          <Button className="bg-gray-1 text-white" onClick={() => open()}>
+          <Button
+            type="button"
+            className="bg-gray-1 text-white"
+            onClick={() => open()}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Upload Image
           </Button>

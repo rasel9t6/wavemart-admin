@@ -1,6 +1,8 @@
+'use server';
 import Collection from '@/lib/models/Collection';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const GET = async (
@@ -20,6 +22,7 @@ export const GET = async (
         { status: 404 }
       );
     }
+
     return NextResponse.json(collection, { status: 200 });
   } catch (error) {
     console.log('[collection_GET]', error);
@@ -68,6 +71,7 @@ export const DELETE = async (
   req: NextRequest,
   { params }: { params: { collectionId: string } }
 ) => {
+  
   try {
     const { userId } = auth();
     if (!userId) {
@@ -75,6 +79,7 @@ export const DELETE = async (
     }
     await connectToDB();
     await Collection.findByIdAndDelete(params.collectionId);
+    await revalidatePath('/collections');
     return new NextResponse('Collection is deleted', { status: 200 });
   } catch (error) {
     console.log('[collection_DELETE]', error);
