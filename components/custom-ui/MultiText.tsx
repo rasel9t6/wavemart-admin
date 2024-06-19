@@ -21,6 +21,7 @@ export default function MultiText({
     onChange(item);
     setInputValue('');
   };
+  console.log(value);
   return (
     <>
       <Input

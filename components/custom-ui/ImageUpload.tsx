@@ -4,7 +4,6 @@ import { Plus, Trash } from 'lucide-react';
 import { Button } from '../ui/button';
 import Image from 'next/image';
 
-
 interface ImageUploadProps {
   value: string[];
   onChange: (value: string) => void;
@@ -15,7 +14,7 @@ export default function ImageUpload({
   onChange,
   onRemove,
 }: ImageUploadProps) {
-  function onUpload(result) {
+  function onUpload(result: any) {
     onChange(result.info.secure_url);
   }
   return (
@@ -36,8 +35,8 @@ export default function ImageUpload({
               src={url}
               alt="image collections"
               className="rounded-lg object-cover"
-              width={200}
-              height={200}
+              fill
+              sizes="100%"
             />
           </div>
         ))}

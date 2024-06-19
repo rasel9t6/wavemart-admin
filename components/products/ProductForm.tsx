@@ -179,10 +179,12 @@ export default function ({ initialData }: ProductFormProps) {
                 <FormControl>
                   <ImageUpload
                     value={field.value}
-                    onChange={(url) => field.onChange([...field.value, url])}
-                    onRemove={(url) =>
+                    onChange={(imageURL) =>
+                      field.onChange([...field.value, imageURL])
+                    }
+                    onRemove={(imageURL) =>
                       field.onChange([
-                        ...field.value.filter((image) => image !== url),
+                        ...field.value.filter((image) => image !== imageURL),
                       ])
                     }
                   />
