@@ -1,11 +1,3 @@
-type CollectionType = {
-  _id: string;
-  title: string;
-  description: string;
-  image: string;
-  products: ProductType[];
-};
-
 type ProductType = {
   _id: string;
   title: string;
@@ -21,7 +13,13 @@ type ProductType = {
   createdAt: Date;
   updatedAt: Date;
 };
-
+type CollectionType = {
+  _id: string;
+  title: string;
+  description: string;
+  image: string;
+  products: ProductType[];
+};
 type OrderColumnType = {
   _id: string;
   customer: string;

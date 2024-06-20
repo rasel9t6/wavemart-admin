@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '../ui/textarea';
 import ImageUpload from '../custom-ui/ImageUpload';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import Delete from '../custom-ui/Delete';
 
@@ -37,13 +37,11 @@ export default function CollectionForm({
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData
-      ? initialData
-      : {
-          title: '',
-          description: '',
-          image: '',
-        },
+    defaultValues: initialData || {
+      title: '',
+      description: '',
+      image: '',
+    },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
