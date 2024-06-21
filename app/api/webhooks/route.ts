@@ -1,0 +1,107 @@
+import { connectToDB } from '@/lib/mongoDB';
+import { NextRequest, NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe';
+import Order from '@/lib/models/Order';
+import Customer from '@/lib/models/Customer';
+
+export const POST = async (req: NextRequest) => {
+  try {
+    console.log('Received request');
+    const rawBody = await req.text();
+    const signature = req.headers.get('Stripe-Signature') as string;
+
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch (err) {
+      console.error('Error verifying Stripe webhook signature:', err);
+      return new NextResponse('Webhook Error: Signature verification failed', {
+        status: 400,
+      });
+    }
+
+    console.log('Webhook event constructed:', event.type);
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      console.log('Checkout session completed:', session);
+
+      const customerInfo = {
+        clerkId: session?.client_reference_id,
+        name: session?.customer_details?.name,
+        email: session?.customer_details?.email,
+      };
+
+      const shippingAddress = {
+        street: session?.shipping_details?.address?.line1,
+        city: session?.shipping_details?.address?.city,
+        state: session?.shipping_details?.address?.state,
+        postalCode: session?.shipping_details?.address?.postal_code,
+        country: session?.shipping_details?.address?.country,
+      };
+
+      const retrieveSession = await stripe.checkout.sessions.retrieve(
+        session.id,
+        { expand: ['line_items.data.price.product'] }
+      );
+
+      console.log('Retrieved session:', retrieveSession);
+
+      const lineItems = retrieveSession?.line_items?.data;
+
+      const orderItems = lineItems?.map((item: any) => {
+        return {
+          product: item.price.product.metadata.productId,
+          color: item.price.product.metadata.color || 'N/A',
+          size: item.price.product.metadata.size || 'N/A',
+          quantity: item.quantity,
+        };
+      });
+
+      try {
+        await connectToDB();
+        console.log('Connected to DB');
+
+        const newOrder = new Order({
+          customerClerkId: customerInfo.clerkId,
+          products: orderItems,
+          shippingAddress,
+          shippingRate: session?.shipping_cost?.shipping_rate,
+          totalAmount: session.amount_total ? session.amount_total / 100 : 0,
+        });
+
+        await newOrder.save();
+        console.log('Order saved:', newOrder);
+
+        let customer = await Customer.findOne({
+          clerkId: customerInfo.clerkId,
+        });
+        console.log('Customer found:', customer);
+
+        if (customer) {
+          customer.orders.push(newOrder._id);
+        } else {
+          customer = new Customer({
+            ...customerInfo,
+            orders: [newOrder._id],
+          });
+        }
+
+        await customer.save();
+        console.log('Customer saved:', customer);
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        return new NextResponse('Database error', { status: 500 });
+      }
+    }
+
+    return new NextResponse('Order created', { status: 200 });
+  } catch (err) {
+    console.error('[webhooks_POST] Unexpected error:', err);
+    return new NextResponse('Failed to create the order', { status: 500 });
+  }
+};
