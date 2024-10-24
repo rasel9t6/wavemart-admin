@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return NextResponse.json({}, { status: 204, headers: corsHeaders });
 }
 
 export async function POST(req: NextRequest) {
@@ -16,14 +16,17 @@ export async function POST(req: NextRequest) {
     const { cartItems, customer } = await req.json();
 
     if (!cartItems || !customer) {
-      return new NextResponse('Not enough data to checkout', { status: 400 });
+      return new NextResponse('Not enough data to checkout', {
+        status: 400,
+        headers: corsHeaders,
+      });
     }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
       shipping_address_collection: {
-        allowed_countries: ['US', 'CA'],
+        allowed_countries: ['US', 'CA', 'BD'],
       },
       shipping_options: [
         { shipping_rate: 'shr_1PThpYAToq8CUfWAY600ZlRc' },
@@ -48,13 +51,13 @@ export async function POST(req: NextRequest) {
       success_url: `${process.env.ECOMMERCE_STORE_URL}/payment_success`,
       cancel_url: `${process.env.ECOMMERCE_STORE_URL}/cart`,
     });
-    console.log(session);
-    return NextResponse.json(session, { headers: corsHeaders });
+
+    return NextResponse.json(session, { status: 200, headers: corsHeaders });
   } catch (err) {
     console.log('[checkout_POST]', err);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse('Internal Server Error', {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 }
-
-// { shipping_rate: 'shr_1PThpYAToq8CUfWAY600ZlRc' },
-//         { shipping_rate: 'shr_1PThmOAToq8CUfWAFVjypwNu' }
