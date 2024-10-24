@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { Separator } from '../ui/separator';
@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '../ui/textarea';
 import ImageUpload from '../custom-ui/ImageUpload';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Delete from '../custom-ui/Delete';
 import MultiText from '../custom-ui/MultiText';
@@ -41,7 +41,7 @@ interface ProductFormProps {
   initialData?: ProductType | null;
 }
 
-export default function ({ initialData }: ProductFormProps) {
+export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);

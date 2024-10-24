@@ -1,31 +1,40 @@
 'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
+
 import DataTable from '@/components/custom-ui/DataTable';
 import Loader from '@/components/custom-ui/Loader';
 import { columns } from '@/components/products/ProductColumns';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@radix-ui/react-separator';
-import { Plus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Separator } from '@/components/ui/separator';
 
 export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<ProductType[]>([]);
   const router = useRouter();
-  const getProducts = async () => {
+
+  // Fetch products from API
+  const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/products', { method: 'GET' });
-      const data = await res.json();
+      const response = await fetch('/api/products');
+      const data = await response.json();
       setProducts(data);
-      setLoading(false);
     } catch (error) {
-      console.log('[products_GET]', error);
+      console.error('Failed to fetch products:', error);
+    } finally {
+      setLoading(false); 
     }
   };
+
+  // Fetch products when the component mounts
   useEffect(() => {
-    getProducts();
+    fetchProducts();
   }, []);
+
   if (loading) return <Loader />;
+
   return (
     <div className="px-10 py-5">
       <div className="flex items-center justify-between">
@@ -34,7 +43,7 @@ export default function ProductPage() {
           className="bg-blue-1 text-white"
           onClick={() => router.push('/products/new')}
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 size-4" />
           Create Product
         </Button>
       </div>

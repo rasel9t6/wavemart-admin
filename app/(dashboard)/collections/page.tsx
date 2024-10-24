@@ -5,28 +5,36 @@ import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 
 import DataTable from '@/components/custom-ui/DataTable';
-import { columns } from '../../../components/collections/CollectionColumns';
+import { columns } from '@/components/collections/CollectionColumns';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import Loader from '@/components/custom-ui/Loader';
 
 export default function CollectionPage() {
   const [loading, setLoading] = useState(true);
   const [collections, setCollections] = useState([]);
   const router = useRouter();
 
-  async function getCollections() {
+  // Fetch collections data
+  const fetchCollections = async () => {
     try {
-      const res = await fetch('/api/collections', { method: 'GET' });
+      const res = await fetch('/api/collections');
       const data = await res.json();
       setCollections(data);
-      setLoading(false);
     } catch (error) {
-      console.log('[collections_GET]', error);
+      console.error('Failed to fetch collections:', error);
+    } finally {
+      setLoading(false); 
     }
-  }
+  };
+
   useEffect(() => {
-    getCollections();
+    fetchCollections(); 
   }, []);
+
+  if (loading) {
+    return <Loader />;
+  }
 
   return (
     <div className="p-1">

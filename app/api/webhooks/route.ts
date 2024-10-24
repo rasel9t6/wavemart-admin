@@ -10,12 +10,16 @@ export const POST = async (req: NextRequest) => {
     const rawBody = await req.text();
     const signature = req.headers.get('Stripe-Signature') as string;
 
+    // Verify the Stripe signature
     let event;
     try {
+      if (!process.env.STRIPE_WEBHOOK_SECRET) {
+        throw new Error('Missing Stripe Webhook Secret');
+      }
       event = stripe.webhooks.constructEvent(
         rawBody,
         signature,
-        process.env.STRIPE_WEBHOOK_SECRET!
+        process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
       console.error('Error verifying Stripe webhook signature:', err);
@@ -31,17 +35,17 @@ export const POST = async (req: NextRequest) => {
       console.log('Checkout session completed:', session);
 
       const customerInfo = {
-        clerkId: session?.client_reference_id,
-        name: session?.customer_details?.name,
-        email: session?.customer_details?.email,
+        clerkId: session?.client_reference_id || 'N/A',
+        name: session?.customer_details?.name || 'N/A',
+        email: session?.customer_details?.email || 'N/A',
       };
 
       const shippingAddress = {
-        street: session?.shipping_details?.address?.line1,
-        city: session?.shipping_details?.address?.city,
-        state: session?.shipping_details?.address?.state,
-        postalCode: session?.shipping_details?.address?.postal_code,
-        country: session?.shipping_details?.address?.country,
+        street: session?.shipping_details?.address?.line1 || 'N/A',
+        city: session?.shipping_details?.address?.city || 'N/A',
+        state: session?.shipping_details?.address?.state || 'N/A',
+        postalCode: session?.shipping_details?.address?.postal_code || 'N/A',
+        country: session?.shipping_details?.address?.country || 'N/A',
       };
 
       const retrieveSession = await stripe.checkout.sessions.retrieve(
@@ -51,16 +55,14 @@ export const POST = async (req: NextRequest) => {
 
       console.log('Retrieved session:', retrieveSession);
 
-      const lineItems = retrieveSession?.line_items?.data;
+      const lineItems = retrieveSession?.line_items?.data || [];
 
-      const orderItems = lineItems?.map((item: any) => {
-        return {
-          product: item.price.product.metadata.productId,
-          color: item.price.product.metadata.color || 'N/A',
-          size: item.price.product.metadata.size || 'N/A',
-          quantity: item.quantity,
-        };
-      });
+      const orderItems = lineItems.map((item: any) => ({
+        product: item.price.product.metadata.productId || 'Unknown Product',
+        color: item.price.product.metadata.color || 'N/A',
+        size: item.price.product.metadata.size || 'N/A',
+        quantity: item.quantity || 0,
+      }));
 
       try {
         await connectToDB();
@@ -70,7 +72,7 @@ export const POST = async (req: NextRequest) => {
           customerClerkId: customerInfo.clerkId,
           products: orderItems,
           shippingAddress,
-          shippingRate: session?.shipping_cost?.shipping_rate,
+          shippingRate: session?.shipping_cost?.shipping_rate || 'N/A',
           totalAmount: session.amount_total ? session.amount_total / 100 : 0,
         });
 

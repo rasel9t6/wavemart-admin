@@ -20,7 +20,7 @@ export const columns: ColumnDef<CollectionType>[] = [
   {
     accessorKey: 'products',
     header: 'Products',
-    cell: ({ row }) => <p>{row.original.products.length}</p>,
+    cell: ({ row }) => <p>{row.original.products?.length}</p>,
   },
   {
     id: 'action',
