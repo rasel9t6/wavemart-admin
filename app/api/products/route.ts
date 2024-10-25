@@ -66,7 +66,14 @@ export const GET = async (req: NextRequest) => {
       .sort({ createdAt: 'desc' })
       .populate({ path: 'collections', model: Collection });
 
-    return NextResponse.json(products, { status: 200 });
+    return NextResponse.json(products, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': `${process.env.ECOMMERCE_STORE_URL}`,
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
   } catch (err) {
     console.log('[products_GET]', err);
     return new NextResponse('Internal Error', { status: 500 });

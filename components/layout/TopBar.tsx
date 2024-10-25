@@ -13,7 +13,13 @@ export default function TopBar() {
   const pathname = usePathname();
   return (
     <div className="sticky top-0 z-20 flex w-full items-center justify-between bg-blue-2 px-8 py-4 shadow-xl lg:hidden">
-      <Image src="/logo.png" alt="Wave Mart Logo" width={60} height={70} />
+      <Image
+        src="/logo.png"
+        className="size-auto"
+        alt="Wave Mart Logo"
+        width={60}
+        height={60}
+      />
       <div className="flex gap-8 max-md:hidden">
         {navLinks.map((item, i) => (
           <Link

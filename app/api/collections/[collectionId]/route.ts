@@ -1,21 +1,21 @@
-'use server';
-import Collection from '@/lib/models/Collection';
 import { connectToDB } from '@/lib/mongoDB';
-import { auth } from '@clerk/nextjs/server';
-import { revalidatePath } from 'next/cache';
+import Collection from '@/lib/models/Collection';
+import Product from '@/lib/models/Product';
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 
 export const GET = async (
   req: NextRequest,
   { params }: { params: { collectionId: string } }
 ) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
     await connectToDB();
-    const collection = await Collection.findById(params.collectionId);
+
+    const collection = await Collection.findById(params.collectionId).populate({
+      path: 'products',
+      model: Product,
+    });
+
     if (!collection) {
       return new NextResponse(
         JSON.stringify({ message: 'Collection not found' }),
@@ -24,10 +24,12 @@ export const GET = async (
     }
 
     return NextResponse.json(collection, { status: 200 });
-  } catch (error) {
-    console.log('[collection_GET]', error);
+  } catch (err) {
+    console.log('[collectionId_GET]', err);
+    return new NextResponse('Internal error', { status: 500 });
   }
 };
+
 export const POST = async (
   req: NextRequest,
   { params }: { params: { collectionId: string } }
@@ -67,21 +69,32 @@ export const POST = async (
     return new NextResponse('Internal error', { status: 500 });
   }
 };
+
 export const DELETE = async (
   req: NextRequest,
   { params }: { params: { collectionId: string } }
 ) => {
   try {
     const { userId } = auth();
+
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
+
     await connectToDB();
+
     await Collection.findByIdAndDelete(params.collectionId);
-    await revalidatePath('/collections');
+
+    await Product.updateMany(
+      { collections: params.collectionId },
+      { $pull: { collections: params.collectionId } }
+    );
+
     return new NextResponse('Collection is deleted', { status: 200 });
-  } catch (error) {
-    console.log('[collection_DELETE]', error);
+  } catch (err) {
+    console.log('[collectionId_DELETE]', err);
     return new NextResponse('Internal error', { status: 500 });
   }
 };
+
+export const dynamic = 'force-dynamic';
