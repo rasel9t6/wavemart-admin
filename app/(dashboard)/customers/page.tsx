@@ -40,3 +40,4 @@ export default function CustomerPage() {
     </div>
   );
 }
+export const dynamic = 'force-dynamic';
