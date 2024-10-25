@@ -21,7 +21,7 @@ export default function ImageUpload({
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-4">
         {value.map((url) => (
-          <div className="relative h-[200px] w-[200px]" key={url}>
+          <div className="relative size-[200px]" key={url}>
             <div className="absolute right-0 top-0 z-10">
               <Button
                 type="button"
@@ -29,7 +29,7 @@ export default function ImageUpload({
                 size="sm"
                 className="bg-red-1 text-white"
               >
-                <Trash className="h-4 w-4" />
+                <Trash className="size-4" />
               </Button>
             </div>
             <Image
@@ -49,7 +49,7 @@ export default function ImageUpload({
             className="bg-gray-1 text-white"
             onClick={() => open()}
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 size-4" />
             Upload Image
           </Button>
         )}
