@@ -13,8 +13,8 @@ export default async function HomePage() {
   const totalRevenue = await getTotalSales().then((data) => data.totalRevenue);
   const totalOrders = await getTotalSales().then((data) => data.totalOrders);
   const totalCustomers = await getTotalCustomers();
-
   const graphData = await getSalesPerMonth();
+  
   return (
     <div className="px-8 py-10">
       <p className="text-heading2-bold">Dashboard</p>

@@ -3,25 +3,28 @@ import { Plus, Trash } from 'lucide-react';
 
 import { Button } from '../ui/button';
 import Image from 'next/image';
+import React from 'react';
 
 interface ImageUploadProps {
   value: string[];
   onChange: (value: string) => void;
   onRemove: (value: string) => void;
 }
-export default function ImageUpload({
-  value,
+
+const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   onRemove,
-}: ImageUploadProps) {
-  function onUpload(result: any) {
+  value,
+}) => {
+  const onUpload = (result: any) => {
     onChange(result.info.secure_url);
-  }
+  };
+  console.log('Value', value, onUpload);
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-4">
         {value.map((url) => (
-          <div className="relative size-[200px]" key={url}>
+          <div key={url} className="relative size-[200px]">
             <div className="absolute right-0 top-0 z-10">
               <Button
                 type="button"
@@ -34,7 +37,7 @@ export default function ImageUpload({
             </div>
             <Image
               src={url}
-              alt="image collections"
+              alt="collections"
               className="rounded-lg object-cover"
               fill
               sizes="100%"
@@ -42,12 +45,17 @@ export default function ImageUpload({
           </div>
         ))}
       </div>
-      <CldUploadWidget uploadPreset="ucxtkf5j" onSuccess={onUpload}>
+
+      <CldUploadWidget
+        uploadPreset="ucxtkf5j"
+        options={{ multiple: true }}
+        onSuccess={onUpload}
+      >
         {({ open }) => (
           <Button
             type="button"
-            className="bg-gray-1 text-white"
             onClick={() => open()}
+            className="bg-gray-1 text-white"
           >
             <Plus className="mr-2 size-4" />
             Upload Image
@@ -56,4 +64,7 @@ export default function ImageUpload({
       </CldUploadWidget>
     </div>
   );
-}
+};
+
+export default ImageUpload;
+

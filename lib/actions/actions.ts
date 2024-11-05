@@ -8,7 +8,7 @@ export const getTotalSales = async () => {
     const orders = await Order.find();
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce(
-      (acc, order) => acc + (order.totalAmount || 0), // Ensure it's a number
+      (acc, order) => acc + (order.totalAmount || 0),
       0
     );
     return { totalOrders, totalRevenue };

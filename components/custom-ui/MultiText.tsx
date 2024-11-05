@@ -21,7 +21,7 @@ export default function MultiText({
     onChange(item);
     setInputValue('');
   };
-  console.log(value);
+
   return (
     <>
       <Input
@@ -45,7 +45,7 @@ export default function MultiText({
               onClick={() => onRemove(item)}
               type="button"
             >
-              <X className="h-3 w-3" />
+              <X className="size-3" />
             </button>
           </Badge>
         ))}

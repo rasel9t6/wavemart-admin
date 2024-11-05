@@ -10,7 +10,6 @@ export default function CustomerPage() {
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState([]);
 
-  // Define getCustomers using useCallback for better performance
   const getCustomers = useCallback(async () => {
     try {
       const res = await fetch('/api/customers');

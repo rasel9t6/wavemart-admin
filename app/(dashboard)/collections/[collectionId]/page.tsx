@@ -1,38 +1,24 @@
-'use client';
-
 import CollectionForm from '@/components/collections/CollectionForm';
 import Loader from '@/components/custom-ui/Loader';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import { Suspense } from 'react';
 
-export default function CollectionDetailsPage({
+export default async function CollectionDetailsPage({
   params,
 }: {
-  params: { collectionId: string };
+  params: Promise<{ collectionId: string }>;
 }) {
-  const [loading, setLoading] = useState(true);
-  const [collectionDetails, setCollectionDetails] =
-    useState<CollectionType | null>(null);
-  async function getCollectionDetails() {
-    try {
-      const res = await fetch(`/api/collections/${params.collectionId}`, {
-        method: 'GET',
-      });
-      const data = await res.json();
-      setCollectionDetails(data);
-      setLoading(false);
-    } catch (error) {
-      console.log('[collection_Get]', error);
-      toast.error('Something went wrong!');
-    }
+  const id = (await params).collectionId;
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/collections/${id}`,
+    { method: 'GET' }
+  );
+  if (!res.ok) {
+    throw new Error('Failed to fetch collection');
   }
-  useEffect(() => {
-    getCollectionDetails();
-  }, []);
-
-  return loading ? (
-    <Loader />
-  ) : (
-    <CollectionForm initialData={collectionDetails} />
+  const collection = await res.json();
+  return (
+    <Suspense fallback={<Loader />}>
+      <CollectionForm initialData={collection} />
+    </Suspense>
   );
 }
