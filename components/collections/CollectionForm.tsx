@@ -1,7 +1,5 @@
-'use client';
-
+"use client";
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Separator } from '../ui/separator';
@@ -17,10 +15,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '../ui/textarea';
 import ImageUpload from '../custom-ui/ImageUpload';
-import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import { redirect } from 'next/navigation';
+import React from 'react';
 import toast from 'react-hot-toast';
 import Delete from '../custom-ui/Delete';
+import Link from 'next/link';
+import { useForm } from 'react-hook-form';
 
 const formSchema = z.object({
   title: z.string().min(3).max(50),
@@ -31,11 +31,15 @@ const formSchema = z.object({
 export default function CollectionForm({
   initialData,
 }: {
-  initialData?: CollectionType | null;
+  initialData?: {
+    _id: string;
+    title: string;
+    description: string;
+    image: string;
+  } | null;
 }) {
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
+  
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
       title: '',
@@ -43,25 +47,24 @@ export default function CollectionForm({
       image: '',
     },
   });
+  
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      setLoading(true);
-      const url = initialData
-        ? `/api/collections/${initialData._id}`
-        : '/api/collections';
-      const res = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(values),
-      });
-      if (res.ok) {
-        setLoading(false);
-        toast.success(`Collection ${initialData ? 'updated' : 'created'}`);
-        router.push('/collections');
-      }
-    } catch (error) {
-      console.log('[collection_POST]', error);
+    const url = initialData
+      ? `/api/collections/${initialData._id}`
+      : '/api/collections';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    });
+
+    if (response.ok) {
+      toast.success(`Collection ${initialData ? 'updated' : 'created'}`);
+      redirect('/collections');
+    } else {
       toast.success('Something went wrong! Please try again');
+      console.error('Collection creation failed');
     }
   }
   const handleKeyPress = (
@@ -142,13 +145,13 @@ export default function CollectionForm({
             <Button type="submit" className="bg-blue-1 text-white">
               Submit
             </Button>
-            <Button
+            <Link
+              href="/collections"
               type="button"
-              className="bg-blue-1 text-white"
-              onClick={() => router.push('/collections')}
+              className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-blue-1 px-4 py-2 text-base-medium font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
             >
               Discard
-            </Button>
+            </Link>
           </div>
         </form>
       </Form>
