@@ -4,13 +4,40 @@ import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
+
+const handleError = (message: string, status: number = 500): NextResponse => {
+  console.error(message);
+  return new NextResponse(message, { status });
+};
+
+// POST handler
 export const POST = async (req: NextRequest) => {
   try {
     const { userId } = auth();
     if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return handleError('Unauthorized', 401);
     }
+
     await connectToDB();
+
+    const body = await req.json();
+    const requiredFields = [
+      'title',
+      'description',
+      'media',
+      'category',
+      'price',
+      'expense',
+    ];
+    const missingFields = requiredFields.filter((field) => !body[field]);
+
+    if (missingFields.length > 0) {
+      return handleError(
+        `Missing required fields: ${missingFields.join(', ')}`,
+        400
+      );
+    }
+
     const {
       title,
       description,
@@ -22,14 +49,10 @@ export const POST = async (req: NextRequest) => {
       colors,
       price,
       expense,
-    } = await req.json();
+    } = body;
 
-    if (!title || !description || !media || !category || !price || !expense) {
-      return new NextResponse('Not enough data to create a product', {
-        status: 400,
-      });
-    }
-    const newProduct = await Product.create({
+    // Create the product
+    const newProduct = new Product({
       title,
       description,
       media,
@@ -42,42 +65,46 @@ export const POST = async (req: NextRequest) => {
       expense,
     });
     await newProduct.save();
-    if (collections) {
-      for (const collectionId of collections) {
+
+    // Update collections if provided
+    if (collections?.length) {
+      const updateCollectionPromises: Promise<void>[] = collections.map(async (collectionId: string): Promise<void> => {
         const collection = await Collection.findById(collectionId);
         if (collection) {
           collection.products.push(newProduct._id);
           await collection.save();
         }
-      }
+      });
+      await Promise.all(updateCollectionPromises);
     }
-    return NextResponse.json(newProduct, { status: 200 });
+
+    return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    console.log('[products_POST]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return handleError(`[products_POST]: ${(error as Error).message}`);
   }
 };
 
-export const GET = async (req: NextRequest) => {
+// GET handler
+export const GET = async () => {
   try {
     await connectToDB();
 
     const products = await Product.find()
-      .sort({ createdAt: 'desc' })
+      .sort({ createdAt: -1 })
       .populate({ path: 'collections', model: Collection });
 
     return NextResponse.json(products, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': `${process.env.ECOMMERCE_STORE_URL}`,
+        'Access-Control-Allow-Origin': process.env.ECOMMERCE_STORE_URL || '*',
         'Access-Control-Allow-Methods': 'GET',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
     });
-  } catch (err) {
-    console.log('[products_GET]', err);
-    return new NextResponse('Internal Error', { status: 500 });
+  } catch (error) {
+    return handleError(`[products_GET]: ${(error as Error).message}`);
   }
 };
 
+// Mark route as dynamic
 export const dynamic = 'force-dynamic';

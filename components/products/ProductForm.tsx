@@ -99,27 +99,41 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setLoading(true);
     try {
-      setLoading(true);
+      const method = initialData ? 'PUT' : 'POST';
       const url = initialData
         ? `/api/products/${initialData._id}`
         : '/api/products';
+
       const res = await fetch(url, {
-        method: 'POST',
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(values),
       });
-      if (res.ok) {
-        setLoading(false);
-        toast.success(`Product ${initialData ? 'updated' : 'created'}`);
-        window.location.href = '/products';
-        router.push('/products');
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to save product');
       }
+
+      toast.success(
+        `Product ${initialData ? 'updated' : 'created'} successfully`
+      );
+      router.push('/products');
     } catch (err) {
-      console.log('[products_POST]', err);
-      toast.error('Something went wrong! Please try again.');
+      console.error('[products_POST]', err);
+      if (err instanceof Error) {
+        toast.error(err.message || 'Something went wrong! Please try again.');
+      } else {
+        toast.error('Something went wrong! Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
-
   return loading ? (
     <Loader />
   ) : (

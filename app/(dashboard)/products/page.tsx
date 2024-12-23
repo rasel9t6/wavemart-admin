@@ -1,6 +1,5 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 
@@ -15,23 +14,21 @@ export default function ProductPage() {
   const [products, setProducts] = useState<ProductType[]>([]);
   const router = useRouter();
 
-  // Fetch products from API
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch('/api/products', { cache: 'no-store' });
       const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
-  };
+  }, []);
 
-  // Fetch products when the component mounts
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   if (loading) return <Loader />;
 
