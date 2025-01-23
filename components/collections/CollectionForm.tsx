@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '../ui/textarea';
 import ImageUpload from '../custom-ui/ImageUpload';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 import toast from 'react-hot-toast';
 import Delete from '../custom-ui/Delete';
@@ -38,8 +38,8 @@ export default function CollectionForm({
     image: string;
   } | null;
 }) {
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
-  
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
       title: '',
@@ -47,7 +47,6 @@ export default function CollectionForm({
       image: '',
     },
   });
-  
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const url = initialData
@@ -61,7 +60,7 @@ export default function CollectionForm({
 
     if (response.ok) {
       toast.success(`Collection ${initialData ? 'updated' : 'created'}`);
-      redirect('/collections');
+      router.push('/collections');
     } else {
       toast.success('Something went wrong! Please try again');
       console.error('Collection creation failed');

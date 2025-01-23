@@ -4,6 +4,7 @@ import { Plus, Trash } from 'lucide-react';
 import { Button } from '../ui/button';
 import Image from 'next/image';
 import React from 'react';
+import { FaT, FaTrash } from 'react-icons/fa6';
 
 interface ImageUploadProps {
   value: string[];
@@ -32,7 +33,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                 size="sm"
                 className="bg-red-1 text-white"
               >
-                <Trash className="size-4" />
+                <FaTrash className="size-4" />
               </Button>
             </div>
             <Image
@@ -67,4 +68,3 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 };
 
 export default ImageUpload;
-

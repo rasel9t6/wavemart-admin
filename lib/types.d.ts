@@ -1,18 +1,10 @@
-type CollectionType = {
-  _id: string;
-  title: string;
-  description: string;
-  image: string;
-  products: ProductType[];
-};
-
-type ProductType = {
+export type ProductType = {
   _id: string;
   title: string;
   description: string;
   media: [string];
   category: string;
-  collections: [CollectionType];
+  collections: { _id: string }[];
   tags: [string];
   sizes: [string];
   colors: [string];
@@ -20,6 +12,14 @@ type ProductType = {
   expense: number;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type CollectionType = {
+  _id: string;
+  title: string;
+  description: string;
+  image: string;
+  products: ProductType[];
 };
 
 type OrderColumnType = {

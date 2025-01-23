@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
-
+import { FaPlus } from 'react-icons/fa6';
 import DataTable from '@/components/custom-ui/DataTable';
 import Loader from '@/components/custom-ui/Loader';
 import { columns } from '@/components/products/ProductColumns';
@@ -40,7 +39,7 @@ export default function ProductPage() {
           className="bg-blue-1 text-white"
           onClick={() => router.push('/products/new')}
         >
-          <Plus className="mr-2 size-4" />
+          <FaPlus className="mr-2 size-4" />
           Create Product
         </Button>
       </div>

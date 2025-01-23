@@ -4,6 +4,7 @@ import DataTable from '@/components/custom-ui/DataTable';
 import { columns } from '@/components/collections/CollectionColumns';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
 
 export default async function CollectionPage() {
   const res = await fetch(
@@ -12,6 +13,7 @@ export default async function CollectionPage() {
   if (!res.ok) {
     throw new Error('Collections not found');
   }
+  revalidatePath('/api/collections');
   const collections = await res.json();
 
   return (

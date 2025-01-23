@@ -53,7 +53,7 @@ export default function MultiSelect({
               className="ml-1 hover:text-red-1"
               onClick={() => onRemove(collection._id)}
             >
-              <X className="h-3 w-3" />
+              <X className="size-3" />
             </button>
           </Badge>
         ))}

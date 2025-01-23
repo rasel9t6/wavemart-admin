@@ -23,6 +23,7 @@ import Delete from '../custom-ui/Delete';
 import MultiText from '../custom-ui/MultiText';
 import MultiSelect from '../custom-ui/MultiSelect';
 import Loader from '../custom-ui/Loader';
+import { CollectionType, ProductType } from '@/lib/types';
 
 const formSchema = z.object({
   title: z.string().min(2).max(50),
@@ -38,7 +39,7 @@ const formSchema = z.object({
 });
 
 interface ProductFormProps {
-  initialData?: ProductType | null;
+  initialData?: ProductType | null | undefined;
 }
 
 export default function ProductForm({ initialData }: ProductFormProps) {
@@ -73,6 +74,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           collections: initialData.collections.map(
             (collection) => collection._id
           ),
+          price: initialData.price,
+          expense: initialData.expense,
         }
       : {
           title: '',
@@ -87,7 +90,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           expense: 0.1,
         },
   });
-
+  console.log('Initial Data:', initialData);
+  console.log('Form Default Values:', form.getValues());
   const handleKeyPress = (
     e:
       | React.KeyboardEvent<HTMLInputElement>

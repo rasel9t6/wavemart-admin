@@ -3,6 +3,7 @@ import Collection from '@/lib/models/Collection';
 import Product from '@/lib/models/Product';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { revalidatePath } from 'next/cache';
 
 export const GET = async (
   req: NextRequest,
@@ -62,7 +63,7 @@ export const POST = async (
     );
 
     await collection.save();
-
+    revalidatePath('/api/collections');
     return NextResponse.json(collection, { status: 200 });
   } catch (err) {
     console.log('[collectionId_POST]', err);

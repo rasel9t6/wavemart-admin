@@ -16,6 +16,7 @@ import { Trash } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { FaTrash } from 'react-icons/fa6';
 
 export default function Delete({ id, item }: { id: string; item: string }) {
   const [loading, setLoading] = useState(false);
@@ -46,7 +47,7 @@ export default function Delete({ id, item }: { id: string; item: string }) {
     <AlertDialog>
       <AlertDialogTrigger>
         <Button className="bg-red-1 text-white">
-          <Trash className="h-4 w-4" />
+          <FaTrash className="size-4" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="bg-white text-gray-1">
