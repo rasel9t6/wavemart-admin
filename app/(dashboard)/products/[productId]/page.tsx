@@ -1,9 +1,6 @@
-import Loader from '@/components/custom-ui/Loader';
 import ProductForm from '@/components/products/ProductForm';
 import { ProductType } from '@/lib/types';
-import { getProductDetails } from '@/server/productActions';
-
-import { Suspense } from 'react';
+import { getProductDetails } from '@/server/product.actions';
 
 export default async function ProductPage({
   params,
@@ -16,9 +13,7 @@ export default async function ProductPage({
   console.log('Product Details:', productDetails);
   return (
     <>
-      <Suspense fallback={<Loader />}>
-        <ProductForm initialData={productDetails} />
-      </Suspense>
+      <ProductForm initialData={productDetails} />
     </>
   );
 }

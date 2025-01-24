@@ -11,9 +11,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-
-import { Trash } from 'lucide-react';
-import { Button } from '../ui/button';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { FaTrash } from 'react-icons/fa6';
@@ -46,9 +43,9 @@ export default function Delete({ id, item }: { id: string; item: string }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger>
-        <Button className="bg-red-1 text-white">
+        <span className="inline-flex h-10 items-center justify-center rounded-md bg-red-1 px-3 py-2 text-white">
           <FaTrash className="size-4" />
-        </Button>
+        </span>
       </AlertDialogTrigger>
       <AlertDialogContent className="bg-white text-gray-1">
         <AlertDialogHeader>

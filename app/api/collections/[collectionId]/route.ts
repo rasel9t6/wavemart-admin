@@ -63,7 +63,7 @@ export const POST = async (
     );
 
     await collection.save();
-    revalidatePath('/api/collections');
+    revalidatePath('/collections');
     return NextResponse.json(collection, { status: 200 });
   } catch (err) {
     console.log('[collectionId_POST]', err);

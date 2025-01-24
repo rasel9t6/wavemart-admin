@@ -9,6 +9,7 @@ import {
 import { useState } from 'react';
 import { Badge } from '../ui/badge';
 import { X } from 'lucide-react';
+import { CollectionType } from '@/lib/types';
 
 interface MultiSelectProps {
   placeholder: string;
@@ -44,7 +45,7 @@ export default function MultiSelect({
 
   return (
     <Command className="overflow-visible bg-white">
-      <div className="flex flex-wrap gap-1 rounded-md border">
+      <div className="flex flex-wrap gap-1 rounded-md border border-gray-1/25">
         {selected.map((collection) => (
           <Badge key={collection._id}>
             {collection.title}
@@ -69,7 +70,7 @@ export default function MultiSelect({
 
       <div className="relative mt-2">
         {open && (
-          <CommandGroup className="absolute top-0 z-30 w-full overflow-auto rounded-md border shadow-md">
+          <CommandGroup className="absolute top-0 z-30 w-full overflow-auto rounded-md border border-gray-1/25 shadow-md">
             {selectable.map((collection) => (
               <CommandItem
                 key={collection._id}

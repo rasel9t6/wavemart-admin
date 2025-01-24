@@ -1,6 +1,4 @@
 import CollectionForm from '@/components/collections/CollectionForm';
-import Loader from '@/components/custom-ui/Loader';
-import { Suspense } from 'react';
 
 export default async function CollectionDetailsPage({
   params,
@@ -17,8 +15,8 @@ export default async function CollectionDetailsPage({
   }
   const collection = await res.json();
   return (
-    <Suspense fallback={<Loader />}>
+    < >
       <CollectionForm initialData={collection} />
-    </Suspense>
+    </>
   );
 }
