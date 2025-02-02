@@ -10,7 +10,6 @@ export default async function ProductPage({
   const productDetails = (await getProductDetails(
     params.productId
   )) as ProductType;
-  console.log('Product Details:', productDetails);
   return (
     <>
       <ProductForm initialData={productDetails} />

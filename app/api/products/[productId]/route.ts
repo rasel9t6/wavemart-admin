@@ -2,6 +2,7 @@ import Collection from '@/lib/models/Collection';
 import Product from '@/lib/models/Product';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
+import { revalidatePath } from 'next/cache';
 
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -124,7 +125,7 @@ export const POST = async (
     ).populate({ path: 'collections', model: Collection });
 
     await updatedProduct.save();
-
+    revalidatePath('/products');
     return NextResponse.json(updatedProduct, { status: 200 });
   } catch (err) {
     console.log('[productId_POST]', err);
@@ -164,7 +165,7 @@ export const DELETE = async (
         })
       )
     );
-
+    revalidatePath('/products');
     return new NextResponse(JSON.stringify({ message: 'Product deleted' }), {
       status: 200,
     });

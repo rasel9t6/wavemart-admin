@@ -90,8 +90,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           expense: 0.1,
         },
   });
-  console.log('Initial Data:', initialData);
-  console.log('Form Default Values:', form.getValues());
   const handleKeyPress = (
     e:
       | React.KeyboardEvent<HTMLInputElement>

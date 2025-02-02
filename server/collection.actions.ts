@@ -67,8 +67,7 @@ export const getCollections = async () => {
     const collections = await Collection.find({})
       .sort({ createdAt: -1 })
       .lean();
-    console.log(collections);
-    return collections;
+    return JSON.parse(JSON.stringify(collections)) as typeof collections;
   } catch (error: any) {
     console.error('[getCollections]', error.message);
     throw new Error('Internal Server Error');

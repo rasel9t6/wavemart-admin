@@ -2,8 +2,8 @@ import Collection from '@/lib/models/Collection';
 import Product from '@/lib/models/Product';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-
 
 const handleError = (message: string, status: number = 500): NextResponse => {
   console.error(message);
@@ -68,16 +68,18 @@ export const POST = async (req: NextRequest) => {
 
     // Update collections if provided
     if (collections?.length) {
-      const updateCollectionPromises: Promise<void>[] = collections.map(async (collectionId: string): Promise<void> => {
-        const collection = await Collection.findById(collectionId);
-        if (collection) {
-          collection.products.push(newProduct._id);
-          await collection.save();
+      const updateCollectionPromises: Promise<void>[] = collections.map(
+        async (collectionId: string): Promise<void> => {
+          const collection = await Collection.findById(collectionId);
+          if (collection) {
+            collection.products.push(newProduct._id);
+            await collection.save();
+          }
         }
-      });
+      );
       await Promise.all(updateCollectionPromises);
     }
-
+    revalidatePath('/products');
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
     return handleError(`[products_POST]: ${(error as Error).message}`);

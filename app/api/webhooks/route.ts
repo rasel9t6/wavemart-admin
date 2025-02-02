@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import Order from '@/lib/models/Order';
 import Customer from '@/lib/models/Customer';
+import { revalidatePath } from 'next/cache';
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -100,7 +101,7 @@ export const POST = async (req: NextRequest) => {
         return new NextResponse('Database error', { status: 500 });
       }
     }
-
+    revalidatePath('/orders');
     return new NextResponse('Order created', { status: 200 });
   } catch (err) {
     console.error('[webhooks_POST] Unexpected error:', err);
