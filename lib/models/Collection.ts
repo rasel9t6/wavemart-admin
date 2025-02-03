@@ -7,7 +7,11 @@ const collectionSchema = new mongoose.Schema({
     unique: true,
   },
   description: String,
-  image: {
+  icon: {
+    type: String,
+    required: true,
+  },
+  thumbnail: {
     type: String,
     required: true,
   },

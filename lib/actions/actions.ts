@@ -54,3 +54,9 @@ export const getSalesPerMonth = async () => {
     throw new Error('Could not retrieve sales per month');
   }
 };
+
+export async function getCurrencyRate() {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_EXCHANGE_RATE_API_URL}`);
+  const currencyRate = await res.json();
+  return parseFloat(currencyRate?.conversion_rates?.BDT) || 17.5;
+}

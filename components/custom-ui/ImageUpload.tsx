@@ -58,7 +58,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             className="bg-gray-1 text-white"
           >
             <Plus className="mr-2 size-4" />
-            Upload Image
+            Upload
           </Button>
         )}
       </CldUploadWidget>

@@ -1,3 +1,4 @@
+import { getCurrencyRate } from '@/lib/actions/actions';
 import Collection from '@/lib/models/Collection';
 import Product from '@/lib/models/Product';
 import { connectToDB } from '@/lib/mongoDB';
@@ -50,7 +51,9 @@ export const POST = async (req: NextRequest) => {
       price,
       expense,
     } = body;
-
+    const currencyRate = await getCurrencyRate();
+    const convertedPrice = price * currencyRate;
+    const convertedExpense = expense * currencyRate;
     // Create the product
     const newProduct = new Product({
       title,
@@ -61,8 +64,8 @@ export const POST = async (req: NextRequest) => {
       tags,
       sizes,
       colors,
-      price,
-      expense,
+      price: convertedPrice,
+      expense: convertedExpense,
     });
     await newProduct.save();
 
@@ -94,7 +97,6 @@ export const GET = async () => {
     const products = await Product.find()
       .sort({ createdAt: -1 })
       .populate({ path: 'collections', model: Collection });
-
     return NextResponse.json(products, {
       status: 200,
       headers: {

@@ -14,7 +14,7 @@ export const POST = async (req: NextRequest) => {
 
     await connectToDB();
 
-    const { title, description, image } = await req.json();
+    const { title, description, icon, thumbnail } = await req.json();
 
     const existingCollection = await Collection.findOne({ title });
 
@@ -22,14 +22,17 @@ export const POST = async (req: NextRequest) => {
       return new NextResponse('Collection already exists', { status: 400 });
     }
 
-    if (!title || !image) {
-      return new NextResponse('Title and image are required', { status: 400 });
+    if (!title || !icon || !thumbnail) {
+      return new NextResponse('Title, icon and thumbnail are required', {
+        status: 400,
+      });
     }
 
     const newCollection = await Collection.create({
       title,
       description,
-      image,
+      icon,
+      thumbnail,
     });
     revalidatePath('/collections');
     await newCollection.save();

@@ -14,8 +14,9 @@ export default async function CollectionDetailsPage({
     throw new Error('Failed to fetch collection');
   }
   const collection = await res.json();
+  console.log(collection);
   return (
-    < >
+    <>
       <CollectionForm initialData={collection} />
     </>
   );

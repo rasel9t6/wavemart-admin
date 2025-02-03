@@ -4,12 +4,18 @@ import Collection from '@/lib/models/Collection';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
+import image from 'next/image';
+import { redirect } from 'next/navigation';
 
 // Helper function to validate input
-const validateCollectionInput = (data: { title: string; image: string }) => {
-  const { title, image } = data;
+const validateCollectionInput = (data: {
+  title: string;
+  icon: string;
+  thumbnail: string;
+}) => {
+  const { title, icon, thumbnail } = data;
 
-  if (!title?.trim() || !image?.trim()) {
+  if (!title?.trim() || !icon?.trim() || !thumbnail?.trim()) {
     throw new Error('Title and image are required');
   }
 };
@@ -18,7 +24,8 @@ const validateCollectionInput = (data: { title: string; image: string }) => {
 export const createCollection = async (data: {
   title: string;
   description?: string;
-  image: string;
+  icon: string;
+  thumbnail: string;
 }) => {
   try {
     // Ensure the user is authenticated
@@ -29,10 +36,10 @@ export const createCollection = async (data: {
 
     await connectToDB();
 
-    const { title, description, image } = data;
+    const { title, description, icon, thumbnail } = data;
 
     // Validate input
-    validateCollectionInput({ title, image });
+    validateCollectionInput({ title, icon, thumbnail });
 
     // Check if the collection already exists
     const existingCollection = await Collection.findOne({ title }, { _id: 1 });
@@ -49,6 +56,7 @@ export const createCollection = async (data: {
 
     // Revalidate the path to reflect the new collection
     revalidatePath('/collections');
+    redirect('/collections');
 
     // Return the new collection as a plain object
     return newCollection;
