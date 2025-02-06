@@ -2,14 +2,22 @@ export type ProductType = {
   _id: string;
   title: string;
   description: string;
-  media: [string];
+  media: string[];
   category: string;
   collections: { _id: string }[];
-  tags: [string];
-  sizes: [string];
-  colors: [string];
-  price: number;
-  expense: number;
+  tags: string[];
+  sizes: string[];
+  colors: string[];
+  price: {
+    cny: number;
+    bdt: number;
+    currencyRate: number;
+  };
+  expense: {
+    cny: number;
+    bdt: number;
+    currencyRate: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 };

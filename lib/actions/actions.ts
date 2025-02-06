@@ -58,5 +58,5 @@ export const getSalesPerMonth = async () => {
 export async function getCurrencyRate() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_EXCHANGE_RATE_API_URL}`);
   const currencyRate = await res.json();
-  return parseFloat(currencyRate?.conversion_rates?.BDT) || 17.5;
+  return currencyRate?.conversion_rates?.BDT || 17.5;
 }

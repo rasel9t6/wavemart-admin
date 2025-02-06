@@ -13,11 +13,13 @@ export const GET = async (
   try {
     await connectToDB();
 
-    const product = await Product.findById(params.productId).populate({
-      path: 'collections',
-      model: Collection,
-    });
-
+    const product = await Product.findById(params.productId)
+      .populate({
+        path: 'collections',
+        model: Collection,
+      })
+      .lean();
+    console.log(product);
     if (!product) {
       return new NextResponse(
         JSON.stringify({ message: 'Product not found' }),
@@ -60,67 +62,61 @@ export const POST = async (
       );
     }
 
-    const {
-      title,
-      description,
-      media,
-      category,
-      collections,
-      tags,
-      sizes,
-      colors,
-      price,
-      expense,
-    } = await req.json();
+    const updateData = await req.json();
 
-    if (!title || !description || !media || !category || !price || !expense) {
-      return new NextResponse('Not enough data to create a new product', {
-        status: 400,
-      });
+    // Create an update object with only the fields that are provided
+    const updateFields: any = { ...product._doc };
+
+    // List of all possible fields
+    const allowedFields = [
+      'title',
+      'description',
+      'media',
+      'category',
+      'collections',
+      'tags',
+      'sizes',
+      'colors',
+      'price',
+      'expense',
+    ];
+
+    // Only include fields that are actually provided in the request
+    allowedFields.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        updateFields[field] = updateData[field];
+      }
+    });
+
+    // Handle collections update only if collections field is provided
+    if (updateData.collections !== undefined) {
+      const addedCollections = updateData.collections.filter(
+        (collectionId: string) => !product.collections.includes(collectionId)
+      );
+
+      const removedCollections = product.collections.filter(
+        (collectionId: string) => !updateData.collections.includes(collectionId)
+      );
+
+      // Update collections
+      await Promise.all([
+        ...addedCollections.map((collectionId: string) =>
+          Collection.findByIdAndUpdate(collectionId, {
+            $push: { products: product._id },
+          })
+        ),
+        ...removedCollections.map((collectionId: string) =>
+          Collection.findByIdAndUpdate(collectionId, {
+            $pull: { products: product._id },
+          })
+        ),
+      ]);
     }
 
-    const addedCollections = collections.filter(
-      (collectionId: string) => !product.collections.includes(collectionId)
-    );
-    // included in new data, but not included in the previous data
-
-    const removedCollections = product.collections.filter(
-      (collectionId: string) => !collections.includes(collectionId)
-    );
-    // included in previous data, but not included in the new data
-
-    // Update collections
-    await Promise.all([
-      // Update added collections with this product
-      ...addedCollections.map((collectionId: string) =>
-        Collection.findByIdAndUpdate(collectionId, {
-          $push: { products: product._id },
-        })
-      ),
-
-      // Update removed collections without this product
-      ...removedCollections.map((collectionId: string) =>
-        Collection.findByIdAndUpdate(collectionId, {
-          $pull: { products: product._id },
-        })
-      ),
-    ]);
-
-    // Update product
+    // Update product with only the provided fields
     const updatedProduct = await Product.findByIdAndUpdate(
       product._id,
-      {
-        title,
-        description,
-        media,
-        category,
-        collections,
-        tags,
-        sizes,
-        colors,
-        price,
-        expense,
-      },
+      { $set: updateFields },
       { new: true }
     ).populate({ path: 'collections', model: Collection });
 
@@ -132,7 +128,94 @@ export const POST = async (
     return new NextResponse('Internal error', { status: 500 });
   }
 };
+export const PUT = async (
+  req: NextRequest,
+  { params }: { params: { productId: string } }
+) => {
+  try {
+    const { userId } = auth();
 
+    if (!userId) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    await connectToDB();
+
+    const product = await Product.findById(params.productId);
+
+    if (!product) {
+      return new NextResponse(
+        JSON.stringify({ message: 'Product not found' }),
+        { status: 404 }
+      );
+    }
+
+    const updateData = await req.json();
+
+    // Create an update object with only the fields that are provided
+    const updateFields: any = { ...product._doc };
+
+    // List of all possible fields
+    const allowedFields = [
+      'title',
+      'description',
+      'media',
+      'category',
+      'collections',
+      'tags',
+      'sizes',
+      'colors',
+      'price',
+      'expense',
+    ];
+
+    // Only include fields that are actually provided in the request
+    allowedFields.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        updateFields[field] = updateData[field];
+      }
+    });
+
+    // Handle collections update only if collections field is provided
+    if (updateData.collections !== undefined) {
+      const addedCollections = updateData.collections.filter(
+        (collectionId: string) => !product.collections.includes(collectionId)
+      );
+
+      const removedCollections = product.collections.filter(
+        (collectionId: string) => !updateData.collections.includes(collectionId)
+      );
+
+      // Update collections
+      await Promise.all([
+        ...addedCollections.map((collectionId: string) =>
+          Collection.findByIdAndUpdate(collectionId, {
+            $push: { products: product._id },
+          })
+        ),
+        ...removedCollections.map((collectionId: string) =>
+          Collection.findByIdAndUpdate(collectionId, {
+            $pull: { products: product._id },
+          })
+        ),
+      ]);
+    }
+
+    // Update product with only the provided fields
+    const updatedProduct = await Product.findByIdAndUpdate(
+      product._id,
+      { $set: updateFields },
+      { new: true }
+    ).populate({ path: 'collections', model: Collection });
+
+    await updatedProduct.save();
+    revalidatePath('/products');
+    return NextResponse.json(updatedProduct, { status: 200 });
+  } catch (err) {
+    console.log('[productId_PUT]', err);
+    return new NextResponse('Internal error', { status: 500 });
+  }
+};
 export const DELETE = async (
   req: NextRequest,
   { params }: { params: { productId: string } }

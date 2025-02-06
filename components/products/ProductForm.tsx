@@ -22,20 +22,28 @@ import toast from 'react-hot-toast';
 import Delete from '../custom-ui/Delete';
 import MultiText from '../custom-ui/MultiText';
 import MultiSelect from '../custom-ui/MultiSelect';
-import Loader from '../custom-ui/Loader';
 import { CollectionType, ProductType } from '@/lib/types';
 
+// Updated form schema to match the model structure
 const formSchema = z.object({
-  title: z.string().min(2).max(50),
-  description: z.string().min(2).max(1000).trim(),
-  media: z.array(z.string()),
-  category: z.string(),
+  title: z.string().min(2).max(200),
+  description: z.string().min(2).max(2000).trim(),
+  media: z.array(z.string().url({ message: 'Invalid media URL' })),
+  category: z.string().min(1, 'Category is required'),
   collections: z.array(z.string()),
   tags: z.array(z.string()),
   sizes: z.array(z.string()),
   colors: z.array(z.string()),
-  price: z.coerce.number().min(0.1),
-  expense: z.coerce.number().min(0.1),
+  price: z.object({
+    cny: z.number().min(0, 'Price cannot be negative'),
+    bdt: z.number().min(0, 'Price cannot be negative'),
+    currencyRate: z.number(),
+  }),
+  expense: z.object({
+    cny: z.number().min(0, 'Expense cannot be negative'),
+    bdt: z.number().min(0, 'Expense cannot be negative'),
+    currencyRate: z.number(),
+  }),
 });
 
 interface ProductFormProps {
@@ -44,10 +52,8 @@ interface ProductFormProps {
 
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
   const [collections, setCollections] = useState<CollectionType[]>([]);
-
+  const [loading, setLoading] = useState(false);
   const getCollections = async () => {
     try {
       const res = await fetch('/api/collections', {
@@ -55,7 +61,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       });
       const data = await res.json();
       setCollections(data);
-      setLoading(false);
     } catch (err) {
       console.log('[collections_GET]', err);
       toast.error('Something went wrong! Please try again.');
@@ -74,8 +79,16 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           collections: initialData.collections.map(
             (collection) => collection._id
           ),
-          price: initialData.price,
-          expense: initialData.expense,
+          price: {
+            cny: initialData.price.cny,
+            bdt: initialData.price.bdt,
+            currencyRate: initialData.price.currencyRate,
+          },
+          expense: {
+            cny: initialData.expense.cny,
+            bdt: initialData.expense.bdt,
+            currencyRate: initialData.expense.currencyRate,
+          },
         }
       : {
           title: '',
@@ -86,10 +99,31 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           tags: [],
           sizes: [],
           colors: [],
-          price: 0.1,
-          expense: 0.1,
+          price: {
+            cny: 0,
+            bdt: 0,
+            currencyRate: 17.5,
+          },
+          expense: {
+            cny: 0,
+            bdt: 0,
+            currencyRate: 17.5,
+          },
         },
   });
+
+  // Add a watch for CNY prices to auto-calculate BDT
+  const cnySelling = form.watch('price.cny');
+  const cnyExpense = form.watch('expense.cny');
+  const currencyRate = form.watch('price.currencyRate');
+
+  useEffect(() => {
+    const bdtPrice = Number((cnySelling * currencyRate).toFixed(2));
+    const bdtExpense = Number((cnyExpense * currencyRate).toFixed(2));
+    form.setValue('price.bdt', bdtPrice);
+    form.setValue('expense.bdt', bdtExpense);
+  }, [cnySelling, cnyExpense, currencyRate, form]);
+
   const handleKeyPress = (
     e:
       | React.KeyboardEvent<HTMLInputElement>
@@ -101,12 +135,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setLoading(true);
     try {
-      const method = initialData ? 'PUT' : 'POST';
+      setLoading(true);
       const url = initialData
         ? `/api/products/${initialData._id}`
         : '/api/products';
+      const method = initialData ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
         method,
@@ -117,7 +151,14 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        let errorData;
+        try {
+          // Try to parse the response body if it's not empty
+          errorData = await res.json();
+        } catch (err) {
+          // If there's an error in parsing, fallback to a generic message
+          errorData = { message: 'Failed to save product' };
+        }
         throw new Error(errorData.message || 'Failed to save product');
       }
 
@@ -125,6 +166,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         `Product ${initialData ? 'updated' : 'created'} successfully`
       );
       router.push('/products');
+      router.refresh();
     } catch (err) {
       console.error('[products_POST]', err);
       if (err instanceof Error) {
@@ -136,9 +178,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       setLoading(false);
     }
   };
-  return loading ? (
-    <Loader />
-  ) : (
+
+  return (
     <div className="p-10">
       {initialData ? (
         <div className="flex items-center justify-between">
@@ -168,6 +209,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="description"
@@ -186,12 +228,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="media"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Image</FormLabel>
+                <FormLabel>Images</FormLabel>
                 <FormControl>
                   <ImageUpload
                     value={field.value}
@@ -211,15 +254,22 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           <div className="gap-8 md:grid md:grid-cols-3">
             <FormField
               control={form.control}
-              name="price"
+              name="price.currencyRate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price ($)</FormLabel>
+                  <FormLabel>Currency Rate (CNY to BDT)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Price"
+                      placeholder="Currency Rate"
+                      step="0.01"
+                      min="0"
                       {...field}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        field.onChange(value);
+                        form.setValue('expense.currencyRate', value);
+                      }}
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -227,17 +277,25 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </FormItem>
               )}
             />
+
+            {/* CNY Price Field */}
             <FormField
               control={form.control}
-              name="expense"
+              name="price.cny"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Expense ($)</FormLabel>
+                  <FormLabel>Price (CNY)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Expense"
+                      placeholder="Price in CNY"
+                      step="0.01"
+                      min="0"
                       {...field}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        field.onChange(value);
+                      }}
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -245,6 +303,73 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </FormItem>
               )}
             />
+
+            {/* BDT Price Display */}
+            <FormField
+              control={form.control}
+              name="price.bdt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price (BDT) - Auto-calculated</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Price in BDT"
+                      disabled
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-1" />
+                </FormItem>
+              )}
+            />
+
+            {/* CNY Expense Field */}
+            <FormField
+              control={form.control}
+              name="expense.cny"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expense (CNY)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Expense in CNY"
+                      step="0.01"
+                      min="0"
+                      {...field}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        field.onChange(value);
+                      }}
+                      onKeyDown={handleKeyPress}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-1" />
+                </FormItem>
+              )}
+            />
+
+            {/* BDT Expense Display */}
+            <FormField
+              control={form.control}
+              name="expense.bdt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expense (BDT) - Auto-calculated</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Expense in BDT"
+                      disabled
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-1" />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="category"
@@ -262,6 +387,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="tags"
@@ -272,7 +398,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <MultiText
                       placeholder="Tags"
                       value={field.value}
-                      onChange={(tag) => field.onChange([...field.value, tag])}
+                      onChange={(tag) =>
+                        field.onChange([...field.value, tag.toLowerCase()])
+                      }
                       onRemove={(tagToRemove) =>
                         field.onChange([
                           ...field.value.filter((tag) => tag !== tagToRemove),
@@ -284,6 +412,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </FormItem>
               )}
             />
+
             {collections.length > 0 && (
               <FormField
                 control={form.control}
@@ -313,6 +442,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 )}
               />
             )}
+
             <FormField
               control={form.control}
               name="colors"
@@ -324,7 +454,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       placeholder="Colors"
                       value={field.value}
                       onChange={(color) =>
-                        field.onChange([...field.value, color])
+                        field.onChange([...field.value, color.toLowerCase()])
                       }
                       onRemove={(colorToRemove) =>
                         field.onChange([
@@ -339,6 +469,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="sizes"
@@ -350,7 +481,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       placeholder="Sizes"
                       value={field.value}
                       onChange={(size) =>
-                        field.onChange([...field.value, size])
+                        field.onChange([...field.value, size.toUpperCase()])
                       }
                       onRemove={(sizeToRemove) =>
                         field.onChange([
@@ -368,13 +499,18 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div className="flex gap-10">
-            <Button type="submit" className="bg-blue-1 text-white">
-              Submit
+            <Button
+              type="submit"
+              className="bg-blue-1 text-white"
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : 'Submit'}
             </Button>
             <Button
               type="button"
               onClick={() => router.push('/products')}
               className="bg-blue-1 text-white"
+              disabled={loading}
             >
               Discard
             </Button>

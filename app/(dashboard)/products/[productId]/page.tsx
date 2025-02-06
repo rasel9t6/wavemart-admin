@@ -1,15 +1,13 @@
 import ProductForm from '@/components/products/ProductForm';
-import { ProductType } from '@/lib/types';
-import { getProductDetails } from '@/server/product.actions';
 
 export default async function ProductPage({
   params,
 }: {
   params: { productId: string };
 }) {
-  const productDetails = (await getProductDetails(
-    params.productId
-  )) as ProductType;
+  const res = await fetch(` 
+    ${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/products/${params.productId}`);
+  const productDetails = await res.json();
   return (
     <>
       <ProductForm initialData={productDetails} />

@@ -1,4 +1,3 @@
-import { getCurrencyRate } from '@/lib/actions/actions';
 import Collection from '@/lib/models/Collection';
 import Product from '@/lib/models/Product';
 import { connectToDB } from '@/lib/mongoDB';
@@ -22,6 +21,7 @@ export const POST = async (req: NextRequest) => {
     await connectToDB();
 
     const body = await req.json();
+ 
     const requiredFields = [
       'title',
       'description',
@@ -51,9 +51,7 @@ export const POST = async (req: NextRequest) => {
       price,
       expense,
     } = body;
-    const currencyRate = await getCurrencyRate();
-    const convertedPrice = price * currencyRate;
-    const convertedExpense = expense * currencyRate;
+
     // Create the product
     const newProduct = new Product({
       title,
@@ -64,8 +62,8 @@ export const POST = async (req: NextRequest) => {
       tags,
       sizes,
       colors,
-      price: convertedPrice,
-      expense: convertedExpense,
+      price,
+      expense,
     });
     await newProduct.save();
 
