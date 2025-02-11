@@ -1,8 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { Separator } from '../ui/separator';
 import { Button } from '@/components/ui/button';
@@ -17,34 +14,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '../ui/textarea';
 import ImageUpload from '../custom-ui/ImageUpload';
-import React, { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import React from 'react';
 import Delete from '../custom-ui/Delete';
 import MultiText from '../custom-ui/MultiText';
 import MultiSelect from '../custom-ui/MultiSelect';
-import { CollectionType, ProductType } from '@/lib/types';
-
-// Updated form schema to match the model structure
-const formSchema = z.object({
-  title: z.string().min(2).max(200),
-  description: z.string().min(2).max(2000).trim(),
-  media: z.array(z.string().url({ message: 'Invalid media URL' })),
-  category: z.string().min(1, 'Category is required'),
-  collections: z.array(z.string()),
-  tags: z.array(z.string()),
-  sizes: z.array(z.string()),
-  colors: z.array(z.string()),
-  price: z.object({
-    cny: z.number().min(0, 'Price cannot be negative'),
-    bdt: z.number().min(0, 'Price cannot be negative'),
-    currencyRate: z.number(),
-  }),
-  expense: z.object({
-    cny: z.number().min(0, 'Expense cannot be negative'),
-    bdt: z.number().min(0, 'Expense cannot be negative'),
-    currencyRate: z.number(),
-  }),
-});
+import { ProductType } from '@/lib/types';
+import { useProductForm } from '@/hooks/useProductForm';
 
 interface ProductFormProps {
   initialData?: ProductType | null | undefined;
@@ -52,133 +27,9 @@ interface ProductFormProps {
 
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
-  const [collections, setCollections] = useState<CollectionType[]>([]);
-  const [loading, setLoading] = useState(false);
-  const getCollections = async () => {
-    try {
-      const res = await fetch('/api/collections', {
-        method: 'GET',
-      });
-      const data = await res.json();
-      setCollections(data);
-    } catch (err) {
-      console.log('[collections_GET]', err);
-      toast.error('Something went wrong! Please try again.');
-    }
-  };
 
-  useEffect(() => {
-    getCollections();
-  }, []);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: initialData
-      ? {
-          ...initialData,
-          collections: initialData.collections.map(
-            (collection) => collection._id
-          ),
-          price: {
-            cny: initialData.price.cny,
-            bdt: initialData.price.bdt,
-            currencyRate: initialData.price.currencyRate,
-          },
-          expense: {
-            cny: initialData.expense.cny,
-            bdt: initialData.expense.bdt,
-            currencyRate: initialData.expense.currencyRate,
-          },
-        }
-      : {
-          title: '',
-          description: '',
-          media: [],
-          category: '',
-          collections: [],
-          tags: [],
-          sizes: [],
-          colors: [],
-          price: {
-            cny: 0,
-            bdt: 0,
-            currencyRate: 17.5,
-          },
-          expense: {
-            cny: 0,
-            bdt: 0,
-            currencyRate: 17.5,
-          },
-        },
-  });
-
-  // Add a watch for CNY prices to auto-calculate BDT
-  const cnySelling = form.watch('price.cny');
-  const cnyExpense = form.watch('expense.cny');
-  const currencyRate = form.watch('price.currencyRate');
-
-  useEffect(() => {
-    const bdtPrice = Number((cnySelling * currencyRate).toFixed(2));
-    const bdtExpense = Number((cnyExpense * currencyRate).toFixed(2));
-    form.setValue('price.bdt', bdtPrice);
-    form.setValue('expense.bdt', bdtExpense);
-  }, [cnySelling, cnyExpense, currencyRate, form]);
-
-  const handleKeyPress = (
-    e:
-      | React.KeyboardEvent<HTMLInputElement>
-      | React.KeyboardEvent<HTMLTextAreaElement>
-  ) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-    }
-  };
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      setLoading(true);
-      const url = initialData
-        ? `/api/products/${initialData._id}`
-        : '/api/products';
-      const method = initialData ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!res.ok) {
-        let errorData;
-        try {
-          // Try to parse the response body if it's not empty
-          errorData = await res.json();
-        } catch (err) {
-          // If there's an error in parsing, fallback to a generic message
-          errorData = { message: 'Failed to save product' };
-        }
-        throw new Error(errorData.message || 'Failed to save product');
-      }
-
-      toast.success(
-        `Product ${initialData ? 'updated' : 'created'} successfully`
-      );
-      router.push('/products');
-      router.refresh();
-    } catch (err) {
-      console.error('[products_POST]', err);
-      if (err instanceof Error) {
-        toast.error(err.message || 'Something went wrong! Please try again.');
-      } else {
-        toast.error('Something went wrong! Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const { form, loading, collections, onSubmit, handleKeyPress } =
+    useProductForm(initialData || undefined);
   return (
     <div className="p-10">
       {initialData ? (

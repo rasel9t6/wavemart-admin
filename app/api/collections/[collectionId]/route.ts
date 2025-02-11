@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 
-
 export const GET = async (
   req: NextRequest,
   { params }: { params: { collectionId: string } }
@@ -51,9 +50,9 @@ export const POST = async (
       return new NextResponse('Collection not found', { status: 404 });
     }
 
-    const { title, description, icon, thumbnail } = await req.json();
+    const { name, title, description, icon, thumbnail } = await req.json();
 
-    if (!title || !icon || !thumbnail) {
+    if (!name || !title || !icon || !thumbnail) {
       return new NextResponse('Title, icon and thumbnail are required', {
         status: 400,
       });
@@ -61,7 +60,7 @@ export const POST = async (
 
     collection = await Collection.findByIdAndUpdate(
       params.collectionId,
-      { title, description, icon, thumbnail },
+      {name, title, description, icon, thumbnail },
       { new: true }
     );
 
@@ -95,7 +94,6 @@ export const DELETE = async (
     );
     revalidatePath('/collections');
     return new NextResponse('Collection is deleted', { status: 200 });
-    
   } catch (err) {
     console.log('[collectionId_DELETE]', err);
     return new NextResponse('Internal error', { status: 500 });

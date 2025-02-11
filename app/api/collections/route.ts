@@ -14,7 +14,7 @@ export const POST = async (req: NextRequest) => {
 
     await connectToDB();
 
-    const { title, description, icon, thumbnail } = await req.json();
+    const { name, title, description, icon, thumbnail } = await req.json();
 
     const existingCollection = await Collection.findOne({ title });
 
@@ -29,6 +29,7 @@ export const POST = async (req: NextRequest) => {
     }
 
     const newCollection = await Collection.create({
+      name,
       title,
       description,
       icon,
