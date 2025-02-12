@@ -1,24 +1,23 @@
 import DataTable from '@/components/custom-ui/DataTable';
-import { columns } from '@/components/collections/CollectionColumns';
+import { columns } from '@/components/categories/CategoryColumns';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { FaPlus } from 'react-icons/fa6';
 
-import { getCollections } from '@/server/collection.actions';
 
 export default async function CollectionPage() {
-  const collections = (await getCollections()) as any;
+  const collections = await fetch(`${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/categories`).then(res => res.json());
 
   return (
     <div className="px-10 py-5">
       <div className="flex items-center justify-between">
-        <p className="text-heading2-bold">Collections</p>
+        <p className="text-heading2-bold">Categories</p>
         <Link
           className="flex items-center rounded-lg bg-blue-1 p-3 text-body-semibold text-white"
-          href="/collections/new"
+          href="/categories/new"
         >
           <FaPlus className="mr-2 size-4" />
-          Create Collection
+          Create Categories
         </Link>
       </div>
       <Separator className="my-4 bg-gray-1" />

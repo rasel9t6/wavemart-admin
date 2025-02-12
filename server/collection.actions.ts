@@ -1,6 +1,6 @@
 'use server';
 
-import Collection from '@/lib/models/Collection';
+import Collection from '@/lib/models/Category';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';

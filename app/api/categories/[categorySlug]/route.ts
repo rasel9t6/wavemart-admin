@@ -1,39 +1,41 @@
 import { connectToDB } from '@/lib/mongoDB';
-import Collection from '@/lib/models/Collection';
 import Product from '@/lib/models/Product';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
+import Category from '@/lib/models/Category';
 
 export const GET = async (
   req: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: { categorySlug: string } }
 ) => {
   try {
     await connectToDB();
 
-    const collection = await Collection.findById(params.collectionId).populate({
+    const category = await Category.findOne({
+      slug: params.categorySlug,
+    }).populate({
       path: 'products',
       model: Product,
     });
 
-    if (!collection) {
+    if (!category) {
       return new NextResponse(
-        JSON.stringify({ message: 'Collection not found' }),
+        JSON.stringify({ message: 'Category not found' }),
         { status: 404 }
       );
     }
 
-    return NextResponse.json(collection, { status: 200 });
+    return NextResponse.json(category, { status: 200 });
   } catch (err) {
-    console.log('[collectionId_GET]', err);
+    console.log('[categoryId_GET]', err);
     return new NextResponse('Internal error', { status: 500 });
   }
 };
 
 export const POST = async (
   req: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: { categorySlug: string } }
 ) => {
   try {
     const { userId } = auth();
@@ -44,10 +46,10 @@ export const POST = async (
 
     await connectToDB();
 
-    let collection = await Collection.findById(params.collectionId);
+    let category = await Category.findOne({ slug: params.categorySlug });
 
-    if (!collection) {
-      return new NextResponse('Collection not found', { status: 404 });
+    if (!category) {
+      return new NextResponse('Category not found', { status: 404 });
     }
 
     const { name, title, description, icon, thumbnail } = await req.json();
@@ -58,24 +60,24 @@ export const POST = async (
       });
     }
 
-    collection = await Collection.findByIdAndUpdate(
-      params.collectionId,
-      {name, title, description, icon, thumbnail },
+    category = await Category.findOneAndUpdate(
+      { slug: params.categorySlug },
+      { name, title, description, icon, thumbnail },
       { new: true }
     );
 
-    await collection.save();
-    revalidatePath('/collections');
-    return NextResponse.json(collection, { status: 200 });
+    await category.save();
+    revalidatePath('/categories');
+    return NextResponse.json(category, { status: 200 });
   } catch (err) {
-    console.log('[collectionId_POST]', err);
+    console.log('[categoryId_POST]', err);
     return new NextResponse('Internal error', { status: 500 });
   }
 };
 
 export const DELETE = async (
   req: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: { categorySlug: string } }
 ) => {
   try {
     const { userId } = auth();
@@ -86,16 +88,23 @@ export const DELETE = async (
 
     await connectToDB();
 
-    await Collection.findByIdAndDelete(params.collectionId);
+    const category = await Category.findOne({ slug: params.categorySlug });
+
+    if (!category) {
+      return new NextResponse('Category not found', { status: 404 });
+    }
+
+    await Category.findOneAndDelete({ slug: params.categorySlug });
 
     await Product.updateMany(
-      { collections: params.collectionId },
-      { $pull: { collections: params.collectionId } }
+      { categories: category._id },
+      { $pull: { categories: category._id } }
     );
-    revalidatePath('/collections');
-    return new NextResponse('Collection is deleted', { status: 200 });
+
+    revalidatePath('/categories');
+    return new NextResponse('category is deleted', { status: 200 });
   } catch (err) {
-    console.log('[collectionId_DELETE]', err);
+    console.log('[CategoryId_DELETE]', err);
     return new NextResponse('Internal error', { status: 500 });
   }
 };

@@ -20,6 +20,11 @@ const subcategorySchema = new mongoose.Schema(
         ref: 'Products',
       },
     ],
+    slug: {
+      type: String,
+      unique: true,
+      lowercase: true,
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -43,7 +48,6 @@ const categorySchema = new mongoose.Schema(
     },
     slug: {
       type: String,
-      required: true,
       unique: true,
       lowercase: true,
     },
@@ -90,7 +94,12 @@ categorySchema.pre('save', function (next) {
   }
   next();
 });
-
+subcategorySchema.pre('save', function (next) {
+  if (this.isModified('name')) {
+    this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  }
+  next();
+});
 // Add indexes
 categorySchema.index({ name: 1 });
 categorySchema.index({ slug: 1 });

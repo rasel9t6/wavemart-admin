@@ -13,9 +13,9 @@ export const navLinks = [
     label: 'Dashboard',
   },
   {
-    url: '/collections',
+    url: '/categories',
     icon: <Shapes />,
-    label: 'Collections',
+    label: 'Categories',
   },
   {
     url: '/products',

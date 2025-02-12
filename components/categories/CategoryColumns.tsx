@@ -11,10 +11,10 @@ export const columns: ColumnDef<CollectionType>[] = [
     header: 'Title',
     cell: ({ row }) => (
       <Link
-        href={`/collections/${row.original._id}`}
+        href={`/categories/${row.original.slug}`}
         className="hover:text-blue-1"
       >
-        {row.original.title}
+        {row.original.name}
       </Link>
     ),
   },

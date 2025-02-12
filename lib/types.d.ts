@@ -1,4 +1,3 @@
-
 export type ProductType = {
   _id: string;
   title: string;
@@ -25,6 +24,8 @@ export type ProductType = {
 
 export type CollectionType = {
   _id: string;
+  name: string;
+  slug: string;
   title: string;
   description: string;
   icon: string;

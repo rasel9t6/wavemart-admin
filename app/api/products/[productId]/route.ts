@@ -1,4 +1,4 @@
-import Collection from '@/lib/models/Collection';
+import Collection from '@/lib/models/Category';
 import Product from '@/lib/models/Product';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
