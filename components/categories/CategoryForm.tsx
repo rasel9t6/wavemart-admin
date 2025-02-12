@@ -84,6 +84,7 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
   });
 
   const handleFormSubmit = async (values: FormValues) => {
+    console.log('Submitting Data:', values);
     try {
       setIsSubmitting(true);
       const url = initialData

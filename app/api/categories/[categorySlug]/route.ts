@@ -52,7 +52,16 @@ export const POST = async (
       return new NextResponse('Category not found', { status: 404 });
     }
 
-    const { name, title, description, icon, thumbnail } = await req.json();
+    const {
+      name,
+      title,
+      description,
+      icon,
+      thumbnail,
+      isActive,
+      slug,
+      subcategories,
+    } = await req.json();
 
     if (!name || !title || !icon || !thumbnail) {
       return new NextResponse('Title, icon and thumbnail are required', {
@@ -62,7 +71,16 @@ export const POST = async (
 
     category = await Category.findOneAndUpdate(
       { slug: params.categorySlug },
-      { name, title, description, icon, thumbnail },
+      {
+        name,
+        title,
+        description,
+        icon,
+        thumbnail,
+        isActive,
+        slug,
+        subcategories,
+      },
       { new: true }
     );
 
