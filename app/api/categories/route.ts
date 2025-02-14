@@ -38,10 +38,11 @@ export const POST = async (req: NextRequest) => {
       description,
       icon,
       thumbnail,
-      slug, // Add the slug field
+      slug,
     });
 
     revalidatePath('/categories');
+    revalidatePath(`/categories/${slug}`);
     return NextResponse.json(newCategory, { status: 201 }); // Changed to 201 for resource creation
   } catch (error) {
     console.log('[Category_POST]', error);
@@ -53,7 +54,8 @@ export const GET = async () => {
   try {
     await connectToDB();
     const categories = await Category.find()
-      .select('name title description icon thumbnail slug') // Explicitly select fields
+      .select('name title description icon thumbnail slug subcategories')
+      .populate('subcategories')
       .sort({ createdAt: -1 }); // Use -1 instead of 'desc' for consistency
 
     return NextResponse.json(categories, { status: 200 });

@@ -17,7 +17,7 @@ const subcategorySchema = new mongoose.Schema(
     products: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Products',
+        ref: 'Product',
       },
     ],
     slug: {
@@ -67,7 +67,7 @@ const categorySchema = new mongoose.Schema(
     products: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Products',
+        ref: 'Product',
       },
     ],
     isActive: {

@@ -61,7 +61,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CategoryForm = ({ initialData }: CategoryFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-
+  console.log(initialData);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData
@@ -82,9 +82,7 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
     control: form.control,
     name: 'subcategories',
   });
-
   const handleFormSubmit = async (values: FormValues) => {
-    console.log('Submitting Data:', values);
     try {
       setIsSubmitting(true);
       const url = initialData
@@ -105,12 +103,12 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
         `Category ${initialData ? 'updated' : 'created'} successfully`
       );
       router.push('/categories');
-      router.refresh();
     } catch (error) {
       toast.error('Failed to save category. Please try again.');
       console.error('Category submission error:', error);
     } finally {
       setIsSubmitting(false);
+      router.refresh();
     }
   };
 
