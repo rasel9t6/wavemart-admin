@@ -4,39 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import Category from '@/lib/models/Category';
-import { Types } from 'mongoose';
-
-// Match your exact model structure
-interface Subcategory {
-  _id?: string;
-  name: string;
-  title: string;
-  description?: string;
-  icon?: string;
-  thumbnail?: string;
-  products: Types.ObjectId[];
-  slug: string;
-  isActive: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface CategoryDocument {
-  _id: Types.ObjectId;
-  name: string;
-  title: string;
-  slug: string;
-  description?: string;
-  icon: string;
-  thumbnail: string;
-  subcategories: Subcategory[];
-  products: Types.ObjectId[];
-  isActive: boolean;
-  sortOrder: number;
-  metadata: Map<string, string>;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import Subcategory from '@/lib/models/Subcategory';
 
 export const GET = async (
   req: NextRequest,
@@ -48,29 +16,25 @@ export const GET = async (
       slug: params.categorySlug,
     })
       .populate({
-        path: 'products',
-        model: Product,
+        path: 'subcategories',
+        model: 'Subcategory',
+        select: '-__v',
       })
-      .populate('subcategories.products')
-      .lean<CategoryDocument>();
+      .lean();
 
     if (!category) {
-      return new NextResponse(
-        JSON.stringify({ message: 'Category not found' }),
+      return NextResponse.json(
+        { error: 'Category not found' },
         { status: 404 }
       );
     }
 
-    // Ensure subcategories is always an array
-    const formattedCategory = {
-      ...category,
-      subcategories: category.subcategories || [],
-    };
-
-    return NextResponse.json(formattedCategory, { status: 200 });
-  } catch (err) {
-    console.log('[categoryId_GET]', err);
-    return new NextResponse('Internal error', { status: 500 });
+    return NextResponse.json(category);
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch category' },
+      { status: 500 }
+    );
   }
 };
 
@@ -85,74 +49,56 @@ export const POST = async (
     }
 
     await connectToDB();
+    const data = await req.json();
     const category = await Category.findOne({ slug: params.categorySlug });
 
     if (!category) {
-      return new NextResponse('Category not found', { status: 404 });
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
     }
 
-    const {
-      name,
-      title,
-      description,
-      icon,
-      thumbnail,
-      isActive,
-      subcategories,
-      sortOrder,
-      metadata = {},
-    } = await req.json();
+    // Update main category fields
+    category.name = data.name;
+    category.title = data.title;
+    category.description = data.description;
+    category.icon = data.icon;
+    category.thumbnail = data.thumbnail;
+    category.isActive = data.isActive;
+    category.sortOrder = data.sortOrder;
 
-    if (!name || !title || !icon || !thumbnail) {
-      return new NextResponse('Name, title, icon and thumbnail are required', {
-        status: 400,
+    // Handle subcategories
+    if (data.subcategories) {
+      // Remove existing subcategories
+      await Subcategory.deleteMany({ category: category._id });
+
+      // Create new subcategories
+      const subcategoryPromises = data.subcategories.map(async (sub: any) => {
+        const subcategoryData = {
+          name: sub.name,
+          title: sub.title,
+          description: sub.description,
+          icon: sub.icon,
+          thumbnail: sub.thumbnail,
+          isActive: sub.isActive,
+          category: category._id,
+        };
+        const subcategory = await Subcategory.create(subcategoryData);
+        return subcategory._id;
       });
+
+      const subcategoryIds = await Promise.all(subcategoryPromises);
+      category.subcategories = subcategoryIds;
     }
 
-    // Generate slug from name if not provided
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    // Process subcategories to ensure they have slugs
-    const processedSubcategories = (subcategories || []).map(
-      (sub: Subcategory) => ({
-        ...sub,
-        slug: sub.slug || sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        isActive: sub.isActive ?? true,
-      })
+    await category.save();
+    return NextResponse.json(category);
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to update category' },
+      { status: 500 }
     );
-
-    const updatedCategory = await Category.findOneAndUpdate(
-      { slug: params.categorySlug },
-      {
-        name,
-        title,
-        description,
-        icon,
-        thumbnail,
-        isActive,
-        slug,
-        subcategories: processedSubcategories,
-        sortOrder: sortOrder || 0,
-        metadata: new Map(Object.entries(metadata)),
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).lean<CategoryDocument>();
-
-    revalidatePath('/categories');
-
-    // Format the response
-    const formattedResponse = {
-      ...updatedCategory,
-      metadata: Object.fromEntries(updatedCategory?.metadata || new Map()),
-    };
-
-    return NextResponse.json(formattedResponse, { status: 200 });
-  } catch (err) {
-    console.log('[categoryId_POST]', err);
-    return new NextResponse('Internal error', { status: 500 });
   }
 };
 
@@ -175,17 +121,23 @@ export const DELETE = async (
 
     await Category.findOneAndDelete({ slug: params.categorySlug });
 
-    // Clean up products references
+    // Clean up product references
     await Product.updateMany(
       { categories: category._id },
       { $pull: { categories: category._id } }
     );
+    // Delete associated subcategories
+    await Subcategory.deleteMany({ category: category._id });
 
+    // Delete the category
+    await category.deleteOne();
     revalidatePath('/categories');
     return new NextResponse('Category deleted successfully', { status: 200 });
-  } catch (err) {
-    console.log('[CategoryId_DELETE]', err);
-    return new NextResponse('Internal error', { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete category' },
+      { status: 500 }
+    );
   }
 };
 

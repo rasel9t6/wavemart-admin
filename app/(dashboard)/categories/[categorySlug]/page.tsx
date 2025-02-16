@@ -52,6 +52,6 @@ export default async function CategoryDetailsPage({
 }) {
   const slug = (await params).categorySlug;
   const category = await CategoryService.getCategoryBySlug(slug);
-
+  console.log(category);
   return <CategoryForm initialData={category} />;
 }

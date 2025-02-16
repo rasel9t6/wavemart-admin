@@ -1,39 +1,6 @@
+// lib/models/Category.ts
 import mongoose from 'mongoose';
 
-// Subcategory Schema
-const subcategorySchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
-    title: {
-      type: String,
-      required: true,
-    },
-    description: String,
-    icon: String,
-    thumbnail: String,
-    products: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product',
-      },
-    ],
-    slug: {
-      type: String,
-      unique: true,
-      lowercase: true,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  { timestamps: true }
-);
-
-// Main Category Schema
 const categorySchema = new mongoose.Schema(
   {
     name: {
@@ -63,7 +30,12 @@ const categorySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    subcategories: [subcategorySchema],
+    subcategories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Subcategory',
+      },
+    ],
     products: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -94,12 +66,7 @@ categorySchema.pre('save', function (next) {
   }
   next();
 });
-subcategorySchema.pre('save', function (next) {
-  if (this.isModified('name')) {
-    this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  }
-  next();
-});
+
 // Add indexes
 categorySchema.index({ name: 1 });
 categorySchema.index({ slug: 1 });
@@ -107,5 +74,4 @@ categorySchema.index({ sortOrder: 1 });
 
 const Category =
   mongoose.models.Category || mongoose.model('Category', categorySchema);
-
 export default Category;

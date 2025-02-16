@@ -19,10 +19,12 @@ type Subcategory = {
   icon?: string;
   thumbnail?: string;
   isActive: boolean;
+  sortOrder: number;
+  parentId: string;
 };
-
 interface CategoryFormProps {
   initialData?: {
+    _id: string;
     slug: string;
     name: string;
     title: string;
@@ -34,7 +36,6 @@ interface CategoryFormProps {
     subcategories: Subcategory[];
   } | null;
 }
-
 // Schemas matching MongoDB requirements
 const subcategorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -43,6 +44,8 @@ const subcategorySchema = z.object({
   icon: z.string().optional(),
   thumbnail: z.string().optional(),
   isActive: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+  parentId: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -61,11 +64,17 @@ type FormValues = z.infer<typeof formSchema>;
 const CategoryForm = ({ initialData }: CategoryFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  console.log(initialData);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData
-      ? { ...initialData, subcategories: initialData.subcategories || [] }
+      ? {
+          ...initialData,
+          subcategories:
+            initialData.subcategories.map((sub) => ({
+              ...sub,
+              parentId: initialData._id,
+            })) || [],
+        }
       : {
           name: '',
           title: '',
@@ -85,6 +94,17 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
   const handleFormSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
+
+      // Format the data for the API
+      const formattedData = {
+        ...values,
+        subcategories: values.subcategories.map((sub, index) => ({
+          ...sub,
+          sortOrder: index,
+          parentId: initialData?._id || '', // Will be set by API for new categories
+        })),
+      };
+
       const url = initialData
         ? `/api/categories/${initialData.slug}`
         : '/api/categories';
@@ -92,23 +112,26 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify(formattedData),
       });
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to save category');
       }
 
       toast.success(
         `Category ${initialData ? 'updated' : 'created'} successfully`
       );
       router.push('/categories');
+      router.refresh();
     } catch (error) {
-      toast.error('Failed to save category. Please try again.');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to save category'
+      );
       console.error('Category submission error:', error);
     } finally {
       setIsSubmitting(false);
-      router.refresh();
     }
   };
 
@@ -249,6 +272,8 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
                       icon: '',
                       thumbnail: '',
                       isActive: true,
+                      sortOrder: fields.length,
+                      parentId: initialData?._id || '',
                     })
                   }
                   className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
@@ -354,6 +379,22 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
                               ''
                             )
                           }
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                          Sort Order
+                        </label>
+                        <input
+                          type="number"
+                          {...form.register(
+                            `subcategories.${index}.sortOrder`,
+                            {
+                              valueAsNumber: true,
+                            }
+                          )}
+                          defaultValue={index}
+                          className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
