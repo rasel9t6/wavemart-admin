@@ -13,6 +13,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '../ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import ImageUpload from '../custom-ui/ImageUpload';
 import React from 'react';
 import Delete from '../custom-ui/Delete';
@@ -27,9 +34,35 @@ interface ProductFormProps {
 
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
-
   const { form, loading, collections, onSubmit, handleKeyPress } =
     useProductForm(initialData || undefined);
+
+  // Helper function to add a new quantity price range
+  const addQuantityRange = () => {
+    const currentRanges = form.getValues('quantityPricing.ranges') || [];
+    form.setValue('quantityPricing.ranges', [
+      ...currentRanges,
+      {
+        minQuantity: 1,
+        maxQuantity: undefined,
+        price: {
+          cny: 0,
+          usd: 0,
+          bdt: 0,
+        },
+      },
+    ]);
+  };
+
+  // Helper function to remove a quantity range
+  const removeQuantityRange = (index: number) => {
+    const currentRanges = form.getValues('quantityPricing.ranges');
+    form.setValue(
+      'quantityPricing.ranges',
+      currentRanges.filter((_, idx) => idx !== index)
+    );
+  };
+
   return (
     <div className="p-10">
       {initialData ? (
@@ -105,22 +138,42 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           <div className="gap-8 md:grid md:grid-cols-3">
             <FormField
               control={form.control}
-              name="price.currencyRate"
+              name="inputCurrency"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Currency Rate (CNY to BDT)</FormLabel>
+                  <FormLabel>Input Currency</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select input currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="CNY">CNY</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-red-1" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="minimumOrderQuantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Minimum Order Quantity</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Currency Rate"
-                      step="0.01"
-                      min="0"
+                      placeholder="Minimum order quantity"
+                      min="1"
                       {...field}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        field.onChange(value);
-                        form.setValue('expense.currencyRate', value);
-                      }}
+                      onChange={(e) => field.onChange(parseInt(e.target.value))}
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -129,24 +182,19 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               )}
             />
 
-            {/* CNY Price Field */}
             <FormField
               control={form.control}
-              name="price.cny"
+              name="currencyRates.usdToBdt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price (CNY)</FormLabel>
+                  <FormLabel>USD to BDT Rate</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Price in CNY"
+                      placeholder="USD to CNY Rate"
                       step="0.01"
                       min="0"
                       {...field}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        field.onChange(value);
-                      }}
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -155,44 +203,19 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               )}
             />
 
-            {/* BDT Price Display */}
             <FormField
               control={form.control}
-              name="price.bdt"
+              name="currencyRates.cnyToBdt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price (BDT) - Auto-calculated</FormLabel>
+                  <FormLabel>CNY to BDT Rate</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Price in BDT"
-                      disabled
-                      value={field.value}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-1" />
-                </FormItem>
-              )}
-            />
-
-            {/* CNY Expense Field */}
-            <FormField
-              control={form.control}
-              name="expense.cny"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Expense (CNY)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Expense in CNY"
+                      placeholder="CNY to BDT Rate"
                       step="0.01"
                       min="0"
                       {...field}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        field.onChange(value);
-                      }}
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -201,19 +224,22 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               )}
             />
 
-            {/* BDT Expense Display */}
             <FormField
               control={form.control}
-              name="expense.bdt"
+              name={`price.${form.getValues('inputCurrency').toLowerCase()}`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Expense (BDT) - Auto-calculated</FormLabel>
+                  <FormLabel>
+                    Price ({form.getValues('inputCurrency')})
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Expense in BDT"
-                      disabled
-                      value={field.value}
+                      placeholder={`Price in ${form.getValues('inputCurrency')}`}
+                      step="0.01"
+                      min="0"
+                      {...field}
+                      onKeyDown={handleKeyPress}
                     />
                   </FormControl>
                   <FormMessage className="text-red-1" />
@@ -221,6 +247,129 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name={`expense.${form.getValues('inputCurrency').toLowerCase()}`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Expense ({form.getValues('inputCurrency')})
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder={`Expense in ${form.getValues('inputCurrency')}`}
+                      step="0.01"
+                      min="0"
+                      {...field}
+                      onKeyDown={handleKeyPress}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-1" />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <FormLabel>Quantity-based Pricing</FormLabel>
+              <Button
+                type="button"
+                onClick={addQuantityRange}
+                className="bg-blue-1 text-white"
+              >
+                Add Range
+              </Button>
+            </div>
+
+            {form.watch('quantityPricing.ranges')?.map((range, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-4 gap-4 rounded border p-4"
+              >
+                <FormField
+                  control={form.control}
+                  name={`quantityPricing.ranges.${index}.minQuantity`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Min Quantity</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`quantityPricing.ranges.${index}.maxQuantity`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max Quantity</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={
+                            form.watch(
+                              `quantityPricing.ranges.${index}.minQuantity`
+                            ) + 1
+                          }
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value ? parseInt(e.target.value) : null
+                            )
+                          }
+                          placeholder="Leave empty for unlimited"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`quantityPricing.ranges.${index}.price.${form.getValues('inputCurrency').toLowerCase()}`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Price ({form.getValues('inputCurrency')})
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="button"
+                  onClick={() => removeQuantityRange(index)}
+                  className="self-end bg-red-1 text-white"
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="gap-8 md:grid md:grid-cols-3">
             <FormField
               control={form.control}
               name="category"
@@ -361,9 +510,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               type="button"
               onClick={() => router.push('/products')}
               className="bg-blue-1 text-white"
-              disabled={loading}
             >
-              Discard
+              Cancel
             </Button>
           </div>
         </form>

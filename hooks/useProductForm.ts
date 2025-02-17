@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,17 +15,31 @@ const getDefaultValues = (initialData?: ProductType): ProductFormValues => {
       collections: initialData.collections.map((collection) => collection._id),
       price: {
         cny: initialData.price.cny,
+        usd: initialData.price.usd,
         bdt: initialData.price.bdt,
-        currencyRate: initialData.price.currencyRate,
       },
       expense: {
         cny: initialData.expense.cny,
+        usd: initialData.expense.usd,
         bdt: initialData.expense.bdt,
-        currencyRate: initialData.expense.currencyRate,
+      },
+      currencyRates: {
+        usdToBdt: initialData.currencyRates.usdToBdt,
+        cnyToBdt: initialData.currencyRates.cnyToBdt,
+      },
+      quantityPricing: {
+        ranges: initialData.quantityPricing.map((range) => ({
+          minQuantity: range.minQuantity,
+          maxQuantity: range.maxQuantity,
+          price: {
+            cny: range.price.cny,
+            usd: range.price.usd,
+            bdt: range.price.bdt,
+          },
+        })),
       },
     };
   }
-
   return {
     title: '',
     description: '',
@@ -34,18 +49,15 @@ const getDefaultValues = (initialData?: ProductType): ProductFormValues => {
     tags: [],
     sizes: [],
     colors: [],
-    price: {
-      cny: 0,
-      bdt: 0,
-      currencyRate: 17.5,
-    },
-    expense: {
-      cny: 0,
-      bdt: 0,
-      currencyRate: 17.5,
-    },
+    inputCurrency: 'CNY',
+    minimumOrderQuantity: 1,
+    quantityPricing: { ranges: [] },
+    price: { cny: 0, usd: 0, bdt: 0 },
+    expense: { cny: 0, usd: 0, bdt: 0 },
+    currencyRates: { usdToBdt: 121.5, cnyToBdt: 17.5 },
   };
 };
+
 export const useProductForm = (initialData?: ProductType) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -59,7 +71,7 @@ export const useProductForm = (initialData?: ProductType) => {
   const { watch, setValue } = form;
   const cnySelling = watch('price.cny');
   const cnyExpense = watch('expense.cny');
-  const currencyRate = watch('price.currencyRate');
+  const currencyRate = watch('currencyRates.cnyToBdt');
 
   useEffect(() => {
     const fetchCollections = async () => {
@@ -72,15 +84,12 @@ export const useProductForm = (initialData?: ProductType) => {
         toast.error('Failed to load collections');
       }
     };
-
     fetchCollections();
   }, []);
 
   useEffect(() => {
-    const bdtPrice = Number((cnySelling * currencyRate).toFixed(2));
-    const bdtExpense = Number((cnyExpense * currencyRate).toFixed(2));
-    setValue('price.bdt', bdtPrice);
-    setValue('expense.bdt', bdtExpense);
+    setValue('price.bdt', Number((cnySelling * currencyRate).toFixed(2)));
+    setValue('expense.bdt', Number((cnyExpense * currencyRate).toFixed(2)));
   }, [cnySelling, cnyExpense, currencyRate, setValue]);
 
   const onSubmit = async (values: ProductFormValues) => {
@@ -89,7 +98,7 @@ export const useProductForm = (initialData?: ProductType) => {
       const url = initialData
         ? `/api/products/${initialData._id}`
         : '/api/products';
-      const method = initialData ? 'POST' : 'POST';
+      const method = initialData ? 'PATCH' : 'POST';
 
       const res = await fetch(url, {
         method,
@@ -98,11 +107,9 @@ export const useProductForm = (initialData?: ProductType) => {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data.message || 'Failed to save product');
       }
-
       toast.success(
         `Product ${initialData ? 'updated' : 'created'} successfully`
       );

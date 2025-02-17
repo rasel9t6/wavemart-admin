@@ -22,91 +22,93 @@ export const POST = async (req: NextRequest) => {
 
     const body = await req.json();
 
-    const requiredFields = [
-      'title',
-      'description',
-      'media',
-      'category',
-      'price',
-      'expense',
-    ];
-    const missingFields = requiredFields.filter((field) => !body[field]);
-
-    if (missingFields.length > 0) {
-      return handleError(
-        `Missing required fields: ${missingFields.join(', ')}`,
-        400
-      );
-    }
-
-    const {
-      title,
-      description,
-      media,
-      category,
-      collections,
-      tags,
-      sizes,
-      colors,
-      price,
-      expense,
-    } = body;
-
-    // Create the product
-    const newProduct = new Product({
-      title,
-      description,
-      media,
-      category,
-      collections,
-      tags,
-      sizes,
-      colors,
-      price,
-      expense,
-    });
-    await newProduct.save();
+    const product = new Product(body);
+    await product.validate(); // Explicitly validate before saving
+    await product.save();
 
     // Update collections if provided
-    if (collections?.length) {
-      const updateCollectionPromises: Promise<void>[] = collections.map(
-        async (collectionId: string): Promise<void> => {
+    if (body.collections?.length) {
+      const updateCollectionPromises = body.collections.map(
+        async (collectionId: string) => {
           const collection = await Collection.findById(collectionId);
           if (collection) {
-            collection.products.push(newProduct._id);
+            collection.products.push(product._id);
             await collection.save();
           }
         }
       );
       await Promise.all(updateCollectionPromises);
     }
-    revalidatePath('/products');
-    return NextResponse.json(newProduct, { status: 201 });
-  } catch (error) {
-    return handleError(`[products_POST]: ${(error as Error).message}`);
+    revalidatePath('/products',);
+    revalidatePath(`/products/${product._id}`,);
+    return NextResponse.json(product, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to create product' },
+      { status: 400 }
+    );
   }
 };
 
 // GET handler
-export const GET = async () => {
+export async function GET(req: NextRequest) {
   try {
     await connectToDB();
+    const { searchParams } = new URL(req.url);
 
-    const products = await Product.find()
+    // Pagination parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
+
+    // Filtering parameters
+    const category = searchParams.get('category');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const tags = searchParams.get('tags')?.split(',');
+    const searchTerm = searchParams.get('search');
+
+    // Build query
+    const query: any = {};
+
+    if (category) query.category = category;
+    if (tags) query.tags = { $in: tags };
+    if (minPrice || maxPrice) {
+      query['price.cny'] = {};
+      if (minPrice) query['price.cny'].$gte = parseFloat(minPrice);
+      if (maxPrice) query['price.cny'].$lte = parseFloat(maxPrice);
+    }
+    if (searchTerm) {
+      query.$or = [
+        { title: { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+      ];
+    }
+
+    // Execute query with pagination
+    const products = await Product.find(query)
       .sort({ createdAt: -1 })
-      .populate({ path: 'collections', model: Collection });
-    return NextResponse.json(products, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': process.env.ECOMMERCE_STORE_URL || '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Product.countDocuments(query);
+
+    return NextResponse.json({
+      products,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
       },
     });
-  } catch (error) {
-    return handleError(`[products_GET]: ${(error as Error).message}`);
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch products' },
+      { status: 500 }
+    );
   }
-};
+}
 
 // Mark route as dynamic
 export const dynamic = 'force-dynamic';

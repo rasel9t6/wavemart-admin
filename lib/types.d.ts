@@ -8,18 +8,33 @@ export type ProductType = {
   tags: string[];
   sizes: string[];
   colors: string[];
+  minimumOrderQuantity: number;
+  inputCurrency: 'CNY' | 'USD';
+  quantityPricing: {
+    minQuantity: number;
+    maxQuantity?: number;
+    price: {
+      cny: number;
+      usd: number;
+      bdt: number;
+    };
+  }[];
   price: {
     cny: number;
+    usd: number;
     bdt: number;
-    currencyRate: number;
   };
   expense: {
     cny: number;
+    usd: number;
     bdt: number;
-    currencyRate: number;
   };
-  createdAt: Date;
-  updatedAt: Date;
+  currencyRates: {
+    usdToBdt: number;
+    cnyToBdt: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type CollectionType = {
