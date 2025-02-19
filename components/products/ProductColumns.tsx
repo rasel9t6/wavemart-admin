@@ -15,13 +15,10 @@ export const columns: ColumnDef<ProductType>[] = [
       </Link>
     ),
   },
+
   {
-    accessorKey: 'category',
-    header: 'Category',
-  },
-  {
-    accessorKey: 'collections',
-    header: 'Collections',
+    accessorKey: 'categories',
+    header: 'Categories',
     cell: ({ row }) =>
       row.original.collections
         .map((collection: any) => collection.title)

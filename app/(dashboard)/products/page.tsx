@@ -11,8 +11,9 @@ export default async function ProductPage() {
   if (!res.ok) {
     throw new Error('Collections not found');
   }
-  const products = await res.json();
-
+  const data = await res.json();
+  const products = data.products;
+  console.log(products);
   return (
     <div className="px-10 py-5">
       <div className="flex items-center justify-between">

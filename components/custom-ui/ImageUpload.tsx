@@ -19,7 +19,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const onUpload = (result: any) => {
     onChange(result.info.secure_url);
   };
-  console.log(value.length);
   return (
     <div className="flex flex-col space-y-6">
       {/* Image Preview Section */}

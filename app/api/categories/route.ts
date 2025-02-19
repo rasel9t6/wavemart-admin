@@ -61,10 +61,15 @@ export const GET = async () => {
   try {
     await connectToDB();
     const categories = await Category.find()
-      .populate('subcategories')
+      .populate({
+        path: 'subcategories',
+        model: 'Subcategory', // Ensure this matches your Subcategory model name
+      })
       .sort({ sortOrder: 1 });
+
     return NextResponse.json(categories);
   } catch (error: any) {
+    console.error('[Categories_GET]', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch categories' },
       { status: 500 }

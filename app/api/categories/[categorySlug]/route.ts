@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import Category from '@/lib/models/Category';
 import Subcategory from '@/lib/models/Subcategory';
+import mongoose from 'mongoose';
 
 export const GET = async (
   req: NextRequest,
@@ -18,9 +19,10 @@ export const GET = async (
       .populate({
         path: 'subcategories',
         model: 'Subcategory',
-        select: '-__v',
+        match: { isActive: true }, // Only populate active subcategories
+        select: '-__v', // Exclude version key
       })
-      .lean();
+      .lean(); // Use lean for better performance
 
     if (!category) {
       return NextResponse.json(
@@ -31,6 +33,7 @@ export const GET = async (
 
     return NextResponse.json(category);
   } catch (error: any) {
+    console.error('[CATEGORY_GET]', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch category' },
       { status: 500 }
@@ -69,34 +72,53 @@ export const POST = async (
     category.sortOrder = data.sortOrder;
 
     // Handle subcategories
-    if (data.subcategories) {
+    if (data.subcategories && Array.isArray(data.subcategories)) {
       // Remove existing subcategories
       await Subcategory.deleteMany({ category: category._id });
 
-      // Create new subcategories
-      const subcategoryPromises = data.subcategories.map(async (sub: any) => {
-        const subcategoryData = {
-          name: sub.name,
-          title: sub.title,
-          description: sub.description,
-          icon: sub.icon,
-          thumbnail: sub.thumbnail,
-          isActive: sub.isActive,
-          category: category._id,
-        };
-        const subcategory = await Subcategory.create(subcategoryData);
-        return subcategory._id;
-      });
+      // Create new subcategories with validation
+      const subcategoryPromises = data.subcategories
+        .filter((sub: any) => sub.name && sub.title) // Basic validation
+        .map(async (sub: any) => {
+          const subcategoryData = {
+            name: sub.name,
+            title: sub.title,
+            description: sub.description || '',
+            icon: sub.icon || '',
+            thumbnail: sub.thumbnail || '',
+            isActive: sub.isActive ?? true,
+            category: category._id,
+          };
 
-      const subcategoryIds = await Promise.all(subcategoryPromises);
-      category.subcategories = subcategoryIds;
+          // Validate subcategory data before creation
+          const subcategory = new Subcategory(subcategoryData);
+          await subcategory.validate(); // Ensures data meets schema requirements
+
+          return subcategory.save();
+        });
+
+      const savedSubcategories = await Promise.all(subcategoryPromises);
+
+      // Update category with new subcategory references
+      category.subcategories = savedSubcategories.map((sub) => sub._id);
+    } else {
+      // Clear subcategories if no valid data is provided
+      category.subcategories = [];
     }
 
     await category.save();
+
+    // Revalidate the categories path
+    revalidatePath('/categories');
+
     return NextResponse.json(category);
   } catch (error: any) {
+    console.error('[CATEGORY_UPDATE]', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to update category' },
+      {
+        error: error.message || 'Failed to update category',
+        details: error.errors, // Mongoose validation error details
+      },
       { status: 500 }
     );
   }
@@ -119,21 +141,38 @@ export const DELETE = async (
       return new NextResponse('Category not found', { status: 404 });
     }
 
-    await Category.findOneAndDelete({ slug: params.categorySlug });
+    // Start a transaction for atomic operations
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Clean up product references
-    await Product.updateMany(
-      { categories: category._id },
-      { $pull: { categories: category._id } }
-    );
-    // Delete associated subcategories
-    await Subcategory.deleteMany({ category: category._id });
+    try {
+      // Remove category references from products
+      await Product.updateMany(
+        { categories: category._id },
+        { $pull: { categories: category._id } },
+        { session }
+      );
 
-    // Delete the category
-    await category.deleteOne();
+      // Delete associated subcategories
+      await Subcategory.deleteMany({ category: category._id }, { session });
+
+      // Delete the category
+      await category.deleteOne({ session });
+
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      // Rollback the transaction if any operation fails
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
+
     revalidatePath('/categories');
     return new NextResponse('Category deleted successfully', { status: 200 });
   } catch (error: any) {
+    console.error('[CATEGORY_DELETE]', error);
     return NextResponse.json(
       { error: error.message || 'Failed to delete category' },
       { status: 500 }

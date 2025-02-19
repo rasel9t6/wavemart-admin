@@ -7,56 +7,38 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { CollectionType, ProductType } from '@/lib/types';
 import { ProductFormValues, productFormSchema } from '@/lib/type';
+import slugify from 'slugify';
 
-const getDefaultValues = (initialData?: ProductType): ProductFormValues => {
-  if (initialData) {
-    return {
-      ...initialData,
-      collections: initialData.collections.map((collection) => collection._id),
-      price: {
-        cny: initialData.price.cny,
-        usd: initialData.price.usd,
-        bdt: initialData.price.bdt,
-      },
-      expense: {
-        cny: initialData.expense.cny,
-        usd: initialData.expense.usd,
-        bdt: initialData.expense.bdt,
-      },
-      currencyRates: {
-        usdToBdt: initialData.currencyRates.usdToBdt,
-        cnyToBdt: initialData.currencyRates.cnyToBdt,
-      },
-      quantityPricing: {
-        ranges: initialData.quantityPricing.map((range) => ({
-          minQuantity: range.minQuantity,
-          maxQuantity: range.maxQuantity,
-          price: {
-            cny: range.price.cny,
-            usd: range.price.usd,
-            bdt: range.price.bdt,
-          },
-        })),
-      },
-    };
-  }
-  return {
-    title: '',
-    description: '',
-    media: [],
-    category: '',
-    collections: [],
-    tags: [],
-    sizes: [],
-    colors: [],
-    inputCurrency: 'CNY',
-    minimumOrderQuantity: 1,
-    quantityPricing: { ranges: [] },
-    price: { cny: 0, usd: 0, bdt: 0 },
-    expense: { cny: 0, usd: 0, bdt: 0 },
-    currencyRates: { usdToBdt: 121.5, cnyToBdt: 17.5 },
-  };
-};
+const getDefaultValues = (initialData?: ProductType): ProductFormValues => ({
+  title: initialData?.title || '',
+  slug: initialData?.slug || '',
+  description: initialData?.description || '',
+  media: initialData?.media || [],
+  category: initialData?.category || '',
+  subcategories: initialData?.subcategories || [],
+  tags: initialData?.tags || [],
+  sizes: initialData?.sizes || [],
+  colors: initialData?.colors || [],
+  inputCurrency: initialData?.inputCurrency || 'CNY',
+  minimumOrderQuantity: initialData?.minimumOrderQuantity || 1,
+  quantityPricing: {
+    ranges: initialData?.quantityPricing?.ranges || [],
+  },
+  price: {
+    cny: initialData?.price?.cny || 0,
+    usd: initialData?.price?.usd || 0,
+    bdt: initialData?.price?.bdt || 0,
+  },
+  expense: {
+    cny: initialData?.expense?.cny || 0,
+    usd: initialData?.expense?.usd || 0,
+    bdt: initialData?.expense?.bdt || 0,
+  },
+  currencyRates: {
+    usdToBdt: initialData?.currencyRates?.usdToBdt || 121.5,
+    cnyToBdt: initialData?.currencyRates?.cnyToBdt || 17.5,
+  },
+});
 
 export const useProductForm = (initialData?: ProductType) => {
   const router = useRouter();
@@ -69,14 +51,22 @@ export const useProductForm = (initialData?: ProductType) => {
   });
 
   const { watch, setValue } = form;
-  const cnySelling = watch('price.cny');
-  const cnyExpense = watch('expense.cny');
-  const currencyRate = watch('currencyRates.cnyToBdt');
+
+  // Watch for currency calculations
+  // const inputCurrency = watch('inputCurrency');
+  // const price = watch(`price.${inputCurrency.toLowerCase()}`);
+  // const expense = watch(`expense.${inputCurrency.toLowerCase()}`);
+  // const currencyRate = watch(
+  //   `currencyRates.${inputCurrency.toLowerCase()}ToBdt`
+  // );
+
+  // Watch title for slug generation
+  const title = watch('title');
 
   useEffect(() => {
     const fetchCollections = async () => {
       try {
-        const res = await fetch('/api/collections');
+        const res = await fetch('/api/categories');
         const data = await res.json();
         setCollections(data);
       } catch (err) {
@@ -87,10 +77,22 @@ export const useProductForm = (initialData?: ProductType) => {
     fetchCollections();
   }, []);
 
+  // Auto-generate slug from title
   useEffect(() => {
-    setValue('price.bdt', Number((cnySelling * currencyRate).toFixed(2)));
-    setValue('expense.bdt', Number((cnyExpense * currencyRate).toFixed(2)));
-  }, [cnySelling, cnyExpense, currencyRate, setValue]);
+    if (title) {
+      setValue('slug', slugify(title, { lower: true, strict: true }));
+    }
+  }, [title, setValue]);
+
+  // Calculate BDT prices
+  // useEffect(() => {
+  //   if (price && currencyRate) {
+  //     setValue('price.bdt', Number((price * currencyRate).toFixed(2)));
+  //   }
+  //   if (expense && currencyRate) {
+  //     setValue('expense.bdt', Number((expense * currencyRate).toFixed(2)));
+  //   }
+  // }, [price, expense, currencyRate, setValue]);
 
   const onSubmit = async (values: ProductFormValues) => {
     try {
@@ -113,7 +115,8 @@ export const useProductForm = (initialData?: ProductType) => {
       toast.success(
         `Product ${initialData ? 'updated' : 'created'} successfully`
       );
-      await Promise.all([router.push('/products'), router.refresh()]);
+      router.push('/products');
+      router.refresh();
     } catch (err) {
       console.error('[PRODUCT_SUBMIT]', err);
       toast.error(err instanceof Error ? err.message : 'Something went wrong');

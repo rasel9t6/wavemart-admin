@@ -29,6 +29,10 @@ const subcategorySchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
     },
+    sortOrder: {
+      type: Number,
+      default: 0,
+    },
     isActive: {
       type: Boolean,
       default: true,

@@ -1,24 +1,27 @@
 export type ProductType = {
   _id: string;
   title: string;
-  description: string;
+  slug: string;
+  description?: string;
   media: string[];
   category: string;
-  collections: { _id: string }[];
+  subcategories: string[];
   tags: string[];
   sizes: string[];
   colors: string[];
   minimumOrderQuantity: number;
   inputCurrency: 'CNY' | 'USD';
   quantityPricing: {
-    minQuantity: number;
-    maxQuantity?: number;
-    price: {
-      cny: number;
-      usd: number;
-      bdt: number;
-    };
-  }[];
+    ranges: {
+      minQuantity: number;
+      maxQuantity?: number;
+      price: {
+        cny: number;
+        usd: number;
+        bdt: number;
+      };
+    }[];
+  };
   price: {
     cny: number;
     usd: number;
@@ -33,8 +36,6 @@ export type ProductType = {
     usdToBdt: number;
     cnyToBdt: number;
   };
-  createdAt: string;
-  updatedAt: string;
 };
 
 export type CollectionType = {
@@ -45,6 +46,7 @@ export type CollectionType = {
   description: string;
   icon: string;
   thumbnail: string;
+  subcategories: string[];
   products: ProductType[];
 };
 

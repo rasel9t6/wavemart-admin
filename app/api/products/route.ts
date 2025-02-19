@@ -101,6 +101,11 @@ export async function GET(req: NextRequest) {
         limit,
         pages: Math.ceil(total / limit),
       },
+      headers: {
+        'Access-Control-Allow-Origin': process.env.ECOMMERCE_STORE_URL || '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
     });
   } catch (error: any) {
     return NextResponse.json(

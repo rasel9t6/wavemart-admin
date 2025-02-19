@@ -45,7 +45,6 @@ export default function DataTable<TData, TValue>({
       columnFilters,
     },
   });
-
   return (
     <div className="py-5">
       {/* Search Input */}

@@ -13,7 +13,7 @@ import { CollectionType } from '@/lib/types';
 
 interface MultiSelectProps {
   placeholder: string;
-  collections: CollectionType[];
+  categories: CollectionType[] ;
   value: string[];
   onChange: (value: string) => void;
   onRemove: (value: string) => void;
@@ -21,7 +21,7 @@ interface MultiSelectProps {
 
 export default function MultiSelect({
   placeholder,
-  collections,
+  categories,
   value,
   onChange,
   onRemove,
@@ -35,11 +35,11 @@ export default function MultiSelect({
     selected = [];
   } else {
     selected = value.map((id) =>
-      collections.find((collection) => collection._id === id)
+      categories.find((collection) => collection._id === id)
     ) as CollectionType[];
   }
 
-  const selectable = collections.filter(
+  const selectable = categories.filter(
     (collection) => !selected.includes(collection)
   );
 
@@ -48,13 +48,13 @@ export default function MultiSelect({
       <div className="flex flex-wrap gap-1 rounded-md border border-gray-1/25">
         {selected.map((collection) => (
           <Badge key={collection._id}>
-            {collection.title}
+            {collection.name}
             <button
               type="button"
-              className="ml-1 hover:text-red-1"
+              className="ml-1 rounded-full transition-colors duration-200 hover:bg-red-1"
               onClick={() => onRemove(collection._id)}
             >
-              <X className="size-3" />
+              <X className="size-3 text-red-1 transition-colors duration-300 hover:text-white" />
             </button>
           </Badge>
         ))}
@@ -70,7 +70,7 @@ export default function MultiSelect({
 
       <div className="relative mt-2">
         {open && (
-          <CommandGroup className="absolute top-0 z-30 w-full overflow-auto rounded-md border border-gray-1/25 shadow-md">
+          <CommandGroup className="absolute top-0 z-30 w-full overflow-auto rounded-md border border-gray-1/25 bg-white shadow-md">
             {selectable.map((collection) => (
               <CommandItem
                 key={collection._id}
@@ -81,7 +81,7 @@ export default function MultiSelect({
                 }}
                 className="cursor-pointer hover:bg-gray-2"
               >
-                {collection.title}
+                {collection.name}
               </CommandItem>
             ))}
           </CommandGroup>

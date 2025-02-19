@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import ImageUpload from '../custom-ui/ImageUpload';
-import React from 'react';
+import React, { useEffect } from 'react';
 import Delete from '../custom-ui/Delete';
 import MultiText from '../custom-ui/MultiText';
 import MultiSelect from '../custom-ui/MultiSelect';
@@ -62,6 +62,58 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       currentRanges.filter((_, idx) => idx !== index)
     );
   };
+
+  // Function to calculate and update BDT prices based on input currency
+  // useEffect(() => {
+  //   const subscription = form.watch((value, { name }) => {
+  //     if (
+  //       name?.includes('currencyRates') ||
+  //       name?.includes('price') ||
+  //       name?.includes('expense') ||
+  //       name?.includes('quantityPricing') ||
+  //       name?.includes('inputCurrency')
+  //     ) {
+  //       const inputCurrency = form.getValues('inputCurrency').toLowerCase();
+  //       const usdToBdt = form.getValues('currencyRates.usdToBdt') || 0;
+  //       const cnyToBdt = form.getValues('currencyRates.cnyToBdt') || 0;
+
+  //       // Update base price and expense
+  //       const price = form.getValues(`price.${inputCurrency}`) || 0;
+  //       const expense = form.getValues(`expense.${inputCurrency}`) || 0;
+
+  //       if (inputCurrency === 'usd') {
+  //         form.setValue('price.bdt', price * usdToBdt);
+  //         form.setValue('expense.bdt', expense * usdToBdt);
+  //       } else if (inputCurrency === 'cny') {
+  //         form.setValue('price.bdt', price * cnyToBdt);
+  //         form.setValue('expense.bdt', expense * cnyToBdt);
+  //       }
+
+  //       // Update quantity pricing ranges
+  //       const ranges = form.getValues('quantityPricing.ranges') || [];
+  //       ranges.forEach((_, index) => {
+  //         const rangePrice =
+  //           form.getValues(
+  //             `quantityPricing.ranges.${index}.price.${inputCurrency}`
+  //           ) || 0;
+
+  //         if (inputCurrency === 'usd') {
+  //           form.setValue(
+  //             `quantityPricing.ranges.${index}.price.bdt`,
+  //             rangePrice * usdToBdt
+  //           );
+  //         } else if (inputCurrency === 'cny') {
+  //           form.setValue(
+  //             `quantityPricing.ranges.${index}.price.bdt`,
+  //             rangePrice * cnyToBdt
+  //           );
+  //         }
+  //       });
+  //     }
+  //   });
+
+  //   return () => subscription.unsubscribe();
+  // }, [form]);
 
   return (
     <div className="p-10">
@@ -191,7 +243,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="USD to CNY Rate"
+                      placeholder="USD to BDT Rate"
                       step="0.01"
                       min="0"
                       {...field}
@@ -226,19 +278,24 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
             <FormField
               control={form.control}
-              name={`price.${form.getValues('inputCurrency').toLowerCase()}`}
+              name="price.usd"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Price ({form.getValues('inputCurrency')})
-                  </FormLabel>
+                <FormItem
+                  className={
+                    form.getValues('inputCurrency') === 'USD' ? '' : 'hidden'
+                  }
+                >
+                  <FormLabel>Price (USD)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder={`Price in ${form.getValues('inputCurrency')}`}
+                      placeholder="Price in USD"
                       step="0.01"
                       min="0"
                       {...field}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value))
+                      }
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -249,7 +306,39 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
             <FormField
               control={form.control}
-              name={`expense.${form.getValues('inputCurrency').toLowerCase()}`}
+              name="price.cny"
+              render={({ field }) => (
+                <FormItem
+                  className={
+                    form.getValues('inputCurrency') === 'CNY' ? '' : 'hidden'
+                  }
+                >
+                  <FormLabel>Price (CNY)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Price in CNY"
+                      step="0.01"
+                      min="0"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value))
+                      }
+                      onKeyDown={handleKeyPress}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-1" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={
+                form.getValues('inputCurrency') === 'USD'
+                  ? 'expense.usd'
+                  : 'expense.cny'
+              }
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
@@ -258,10 +347,15 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder={`Expense in ${form.getValues('inputCurrency')}`}
+                      placeholder={`Expense in ${form.getValues(
+                        'inputCurrency'
+                      )}`}
                       step="0.01"
                       min="0"
                       {...field}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value))
+                      }
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -286,7 +380,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             {form.watch('quantityPricing.ranges')?.map((range, index) => (
               <div
                 key={index}
-                className="grid grid-cols-4 gap-4 rounded border p-4"
+                className="grid grid-cols-5 gap-4 rounded border p-4"
               >
                 <FormField
                   control={form.control}
@@ -317,15 +411,15 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormControl>
                         <Input
                           type="number"
-                          min={
-                            form.watch(
-                              `quantityPricing.ranges.${index}.minQuantity`
-                            ) + 1
-                          }
+                          min={form.watch(
+                            `quantityPricing.ranges.${index}.minQuantity`
+                          )}
                           {...field}
                           onChange={(e) =>
                             field.onChange(
-                              e.target.value ? parseInt(e.target.value) : null
+                              e.target.value
+                                ? parseInt(e.target.value)
+                                : undefined
                             )
                           }
                           placeholder="Leave empty for unlimited"
@@ -337,7 +431,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
                 <FormField
                   control={form.control}
-                  name={`quantityPricing.ranges.${index}.price.${form.getValues('inputCurrency').toLowerCase()}`}
+                  name={`quantityPricing.ranges.${index}.price` as const}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
@@ -357,7 +451,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     </FormItem>
                   )}
                 />
-
+                <FormItem>
+                  <FormLabel>BDT Price</FormLabel>
+                  <Input
+                    type="number"
+                    value={form.getValues(
+                      `quantityPricing.ranges.${index}.price.bdt`
+                    )}
+                    disabled
+                    className="bg-gray-100"
+                  />
+                </FormItem>
                 <Button
                   type="button"
                   onClick={() => removeQuantityRange(index)}
@@ -376,17 +480,65 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Category"
-                      {...field}
-                      onKeyDown={handleKeyPress}
-                    />
-                  </FormControl>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      form.setValue('subcategories', []);
+                    }}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {collections.map((category) => (
+                        <SelectItem key={category._id} value={category._id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage className="text-red-1" />
                 </FormItem>
               )}
             />
+
+            {form.watch('category') && (
+              <FormField
+                control={form.control}
+                name="subcategories"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategories</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        placeholder="Select subcategories"
+                        categories={
+                          collections.find(
+                            (c) => c._id === form.watch('category')
+                          )?.subcategories || []
+                        }
+                        value={field.value || []}
+                        onChange={(_id) =>
+                          field.onChange([...field.value, _id])
+                        }
+                        onRemove={(idToRemove) =>
+                          field.onChange([
+                            ...field.value.filter(
+                              (subcategoryId: string) =>
+                                subcategoryId !== idToRemove
+                            ),
+                          ])
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-1" />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
@@ -412,36 +564,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </FormItem>
               )}
             />
-
-            {collections.length > 0 && (
-              <FormField
-                control={form.control}
-                name="collections"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Collections</FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        placeholder="Collections"
-                        collections={collections}
-                        value={field.value}
-                        onChange={(_id) =>
-                          field.onChange([...field.value, _id])
-                        }
-                        onRemove={(idToRemove) =>
-                          field.onChange([
-                            ...field.value.filter(
-                              (collectionId) => collectionId !== idToRemove
-                            ),
-                          ])
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-1" />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <FormField
               control={form.control}
@@ -504,12 +626,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               className="bg-blue-1 text-white"
               disabled={loading}
             >
-              {loading ? 'Saving...' : 'Submit'}
+              {loading
+                ? 'Saving...'
+                : initialData
+                  ? 'Update Product'
+                  : 'Create Product'}
             </Button>
             <Button
               type="button"
               onClick={() => router.push('/products')}
-              className="bg-blue-1 text-white"
+              className="bg-gray-1 text-white"
+              variant="outline"
             >
               Cancel
             </Button>
