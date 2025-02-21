@@ -19,8 +19,6 @@ export const GET = async (
       .populate({
         path: 'subcategories',
         model: 'Subcategory',
-        match: { isActive: true }, // Only populate active subcategories
-        select: '-__v', // Exclude version key
       })
       .lean(); // Use lean for better performance
 
@@ -30,7 +28,6 @@ export const GET = async (
         { status: 404 }
       );
     }
-
     return NextResponse.json(category);
   } catch (error: any) {
     console.error('[CATEGORY_GET]', error);

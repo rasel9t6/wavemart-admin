@@ -1,37 +1,62 @@
 import { z } from 'zod';
 
 const CurrencySchema = z.object({
-  cny: z.number().min(0, 'Price cannot be negative'),
-  usd: z.number().min(0, 'Price cannot be negative'),
-  bdt: z.number().min(0, 'Price cannot be negative'),
+  cny: z.number().min(0, 'Price in CNY cannot be negative'),
+  usd: z.number().min(0, 'Price in USD cannot be negative'),
+  bdt: z.number().min(0, 'Price in BDT cannot be negative'),
 });
 
 const RangeSchema = z.object({
   minQuantity: z.number().min(1, 'Minimum quantity must be at least 1'),
-  maxQuantity: z.number().optional(),
+  maxQuantity: z
+    .number()
+    .optional()
+    .refine(
+      (val) => !val || val > 0,
+      'Maximum quantity must be greater than 0'
+    ),
   price: CurrencySchema,
 });
 
 export const productFormSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200),
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(200, 'Title cannot exceed 200 characters'),
   slug: z.string().optional(),
-  description: z.string().max(2000).optional(),
-  media: z.array(z.string().url('Invalid URL')),
-  category: z.string().min(1, 'Category is required'),
-  subcategories: z.array(z.string()),
-  tags: z.array(z.string()),
-  sizes: z.array(z.string()),
-  colors: z.array(z.string()),
-  minimumOrderQuantity: z.number().min(1),
-  inputCurrency: z.enum(['CNY', 'USD']),
-  quantityPricing: z.object({
-    ranges: z.array(RangeSchema),
+  description: z
+    .string()
+    .max(2000, 'Description cannot exceed 2000 characters')
+    .optional(),
+  media: z
+    .array(z.string().url('Please provide a valid URL for media'))
+    .min(1, 'At least one media item is required'),
+  category: z.string().min(1, 'Category selection is required'),
+  subcategories: z
+    .array(z.string())
+    .min(1, 'At least one subcategory must be selected'),
+  tags: z.array(z.string()).min(1, 'At least one tag is required'),
+  sizes: z.array(z.string()).min(1, 'At least one size must be selected'),
+  colors: z
+    .array(z.string().trim().toLowerCase()),
+  minimumOrderQuantity: z
+    .number()
+    .min(1, 'Minimum order quantity must be at least 1'),
+  inputCurrency: z.enum(['CNY', 'USD'], {
+    errorMap: () => ({ message: 'Please select either CNY or USD' }),
   }),
+  quantityPricing: z
+    .object({
+      ranges: z
+        .array(RangeSchema)
+        .min(1, 'At least one price range is required'),
+    })
+    .optional(),
   price: CurrencySchema,
   expense: CurrencySchema,
   currencyRates: z.object({
-    usdToBdt: z.number().min(0),
-    cnyToBdt: z.number().min(0),
+    usdToBdt: z.number().min(0, 'USD to BDT rate cannot be negative'),
+    cnyToBdt: z.number().min(0, 'CNY to BDT rate cannot be negative'),
   }),
 });
 

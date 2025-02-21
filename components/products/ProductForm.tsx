@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import ImageUpload from '../custom-ui/ImageUpload';
-import React, { useEffect } from 'react';
+import React from 'react';
 import Delete from '../custom-ui/Delete';
 import MultiText from '../custom-ui/MultiText';
 import MultiSelect from '../custom-ui/MultiSelect';
@@ -292,10 +292,15 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       placeholder="Price in USD"
                       step="0.01"
                       min="0"
+                      defaultValue={initialData?.price?.usd ?? 0}
                       {...field}
-                      onChange={(e) =>
-                        field.onChange(parseFloat(e.target.value))
-                      }
+                      onChange={(e) => {
+                        const value =
+                          e.target.value === ''
+                            ? undefined
+                            : parseFloat(e.target.value);
+                        field.onChange(value);
+                      }}
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -321,9 +326,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       step="0.01"
                       min="0"
                       {...field}
-                      onChange={(e) =>
-                        field.onChange(parseFloat(e.target.value))
-                      }
+                      onChange={(e) => {
+                        const value =
+                          e.target.value === ''
+                            ? undefined
+                            : parseFloat(e.target.value);
+                        field.onChange(value);
+                      }}
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -431,7 +440,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
                 <FormField
                   control={form.control}
-                  name={`quantityPricing.ranges.${index}.price` as const}
+                  name={`quantityPricing.ranges.${index}.price`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
@@ -442,10 +451,23 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           type="number"
                           step="0.01"
                           min="0"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
+                          value={
+                            field.value[
+                              form.getValues('inputCurrency').toLowerCase() as
+                                | 'cny'
+                                | 'usd'
+                                | 'bdt'
+                            ]
                           }
+                          onChange={(e) => {
+                            const inputCurrency = form
+                              .getValues('inputCurrency')
+                              .toLowerCase();
+                            field.onChange({
+                              ...field.value,
+                              [inputCurrency]: parseFloat(e.target.value),
+                            });
+                          }}
                         />
                       </FormControl>
                     </FormItem>
@@ -548,15 +570,15 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                   <FormLabel>Tags</FormLabel>
                   <FormControl>
                     <MultiText
-                      placeholder="Tags"
+                      placeholder="Add tags"
                       value={field.value}
                       onChange={(tag) =>
                         field.onChange([...field.value, tag.toLowerCase()])
                       }
                       onRemove={(tagToRemove) =>
-                        field.onChange([
-                          ...field.value.filter((tag) => tag !== tagToRemove),
-                        ])
+                        field.onChange(
+                          field.value.filter((tag) => tag !== tagToRemove)
+                        )
                       }
                     />
                   </FormControl>
@@ -564,7 +586,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="colors"

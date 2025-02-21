@@ -25,18 +25,18 @@ const getDefaultValues = (initialData?: ProductType): ProductFormValues => ({
     ranges: initialData?.quantityPricing?.ranges || [],
   },
   price: {
-    cny: initialData?.price?.cny || 0,
-    usd: initialData?.price?.usd || 0,
-    bdt: initialData?.price?.bdt || 0,
+    cny: initialData?.price?.cny ?? 0,
+    usd: initialData?.price?.usd ?? 0,
+    bdt: initialData?.price?.bdt ?? 0,
   },
   expense: {
-    cny: initialData?.expense?.cny || 0,
-    usd: initialData?.expense?.usd || 0,
-    bdt: initialData?.expense?.bdt || 0,
+    cny: initialData?.expense?.cny ?? 0,
+    usd: initialData?.expense?.usd ?? 0,
+    bdt: initialData?.expense?.bdt ?? 0,
   },
   currencyRates: {
-    usdToBdt: initialData?.currencyRates?.usdToBdt || 121.5,
-    cnyToBdt: initialData?.currencyRates?.cnyToBdt || 17.5,
+    usdToBdt: initialData?.currencyRates?.usdToBdt ?? 121.5,
+    cnyToBdt: initialData?.currencyRates?.cnyToBdt ?? 17.5,
   },
 });
 
@@ -51,14 +51,6 @@ export const useProductForm = (initialData?: ProductType) => {
   });
 
   const { watch, setValue } = form;
-
-  // Watch for currency calculations
-  // const inputCurrency = watch('inputCurrency');
-  // const price = watch(`price.${inputCurrency.toLowerCase()}`);
-  // const expense = watch(`expense.${inputCurrency.toLowerCase()}`);
-  // const currencyRate = watch(
-  //   `currencyRates.${inputCurrency.toLowerCase()}ToBdt`
-  // );
 
   // Watch title for slug generation
   const title = watch('title');
@@ -84,34 +76,37 @@ export const useProductForm = (initialData?: ProductType) => {
     }
   }, [title, setValue]);
 
-  // Calculate BDT prices
-  // useEffect(() => {
-  //   if (price && currencyRate) {
-  //     setValue('price.bdt', Number((price * currencyRate).toFixed(2)));
-  //   }
-  //   if (expense && currencyRate) {
-  //     setValue('expense.bdt', Number((expense * currencyRate).toFixed(2)));
-  //   }
-  // }, [price, expense, currencyRate, setValue]);
-
   const onSubmit = async (values: ProductFormValues) => {
     try {
       setLoading(true);
+
+      // Deep clean the values to remove any undefined or null
+      const cleanedValues = JSON.parse(JSON.stringify(values));
+
       const url = initialData
         ? `/api/products/${initialData._id}`
         : '/api/products';
-      const method = initialData ? 'PATCH' : 'POST';
+      const method = 'POST';
+
+      console.log('Submitting product data:', cleanedValues);
 
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify(cleanedValues),
       });
 
       const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(data.message || 'Failed to save product');
+        // Log more detailed error information
+        console.error('Server error response:', {
+          status: res.status,
+          body: data,
+        });
+        throw new Error(data.error || data.message || 'Failed to save product');
       }
+
       toast.success(
         `Product ${initialData ? 'updated' : 'created'} successfully`
       );
@@ -119,7 +114,15 @@ export const useProductForm = (initialData?: ProductType) => {
       router.refresh();
     } catch (err) {
       console.error('[PRODUCT_SUBMIT]', err);
-      toast.error(err instanceof Error ? err.message : 'Something went wrong');
+
+      // More specific error handling
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else if (typeof err === 'object' && err !== null) {
+        toast.error(JSON.stringify(err));
+      } else {
+        toast.error('Something went wrong');
+      }
     } finally {
       setLoading(false);
     }

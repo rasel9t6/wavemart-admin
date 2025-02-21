@@ -4,9 +4,35 @@ import slugify from 'slugify';
 // Create custom type for price and expense
 const CurrencySchema = new mongoose.Schema(
   {
-    cny: { type: Number, min: [0, 'Value cannot be negative'] },
-    usd: { type: Number, min: [0, 'Value cannot be negative'] },
-    bdt: { type: Number, min: [0, 'Value cannot be negative'] },
+    cny: {
+      type: Number,
+      min: [0, 'Value cannot be negative'],
+      default: 0,
+      validate: {
+        validator: function (this: any, v: any) {
+          // If no value is provided for both, that's fine
+          return v !== undefined || !this.parent().usd;
+        },
+        message: 'At least one currency (CNY or USD) must be provided',
+      },
+    },
+    usd: {
+      type: Number,
+      min: [0, 'Value cannot be negative'],
+      default: 0,
+      validate: {
+        validator: function (this: any, v: any) {
+          // If no value is provided for both, that's fine
+          return v !== undefined || !this.parent().cny;
+        },
+        message: 'At least one currency (CNY or USD) must be provided',
+      },
+    },
+    bdt: {
+      type: Number,
+      min: [0, 'Value cannot be negative'],
+      default: 0,
+    },
   },
   { _id: false }
 );
@@ -15,7 +41,17 @@ const CurrencySchema = new mongoose.Schema(
 const RangeSchema = new mongoose.Schema(
   {
     minQuantity: { type: Number, required: true, min: 1 },
-    maxQuantity: { type: Number, min: 1 },
+    maxQuantity: {
+      type: Number,
+      min: [1, 'Max quantity must be at least 1'],
+      validate: {
+        validator: function (this: any, v: any) {
+          return !v || v >= this.minQuantity;
+        },
+        message:
+          'Max quantity must be greater than or equal to minimum quantity',
+      },
+    },
     price: CurrencySchema,
   },
   { _id: false }
@@ -62,9 +98,9 @@ const ProductSchema = new mongoose.Schema(
         index: true,
       },
     ],
-    tags: [{ type: String, trim: true, lowercase: true }],
-    sizes: [{ type: String, trim: true, uppercase: true }],
-    colors: [{ type: String, trim: true, lowercase: true }],
+    tags: [String],
+    sizes: [String],
+    colors: [String],
     minimumOrderQuantity: {
       type: Number,
       required: true,
@@ -74,11 +110,41 @@ const ProductSchema = new mongoose.Schema(
     inputCurrency: {
       type: String,
       enum: ['CNY', 'USD'],
-      required: true,
+      required: [true, 'Input currency is required'],
       default: 'CNY',
     },
     quantityPricing: {
-      ranges: [RangeSchema],
+      ranges: {
+        type: [RangeSchema],
+        validate: [
+          {
+            validator: function (ranges: any) {
+              // Ensure no overlapping quantity ranges
+              if (!ranges || ranges.length <= 1) return true;
+
+              for (let i = 0; i < ranges.length; i++) {
+                for (let j = i + 1; j < ranges.length; j++) {
+                  const range1 = ranges[i];
+                  const range2 = ranges[j];
+
+                  // Check for overlapping ranges
+                  const overlap =
+                    (range1.minQuantity <= range2.maxQuantity &&
+                      range1.maxQuantity >= range2.minQuantity) ||
+                    (range2.minQuantity <= range1.maxQuantity &&
+                      range2.maxQuantity >= range1.minQuantity);
+
+                  if (overlap) {
+                    return false;
+                  }
+                }
+              }
+              return true;
+            },
+            message: 'Quantity ranges cannot overlap',
+          },
+        ],
+      },
     },
     price: CurrencySchema,
     expense: CurrencySchema,
@@ -96,50 +162,91 @@ const ProductSchema = new mongoose.Schema(
 
 // Generate slug before saving
 ProductSchema.pre('save', function (next) {
-  if (this.isModified('title')) {
-    this.slug = slugify(this.title, { lower: true, strict: true });
-  }
+  try {
+    // Slug generation
+    if (this.isModified('title')) {
+      this.slug = slugify(this.title, { lower: true, strict: true });
+    }
 
-  // Calculate BDT prices based on input currency
-  if (this.inputCurrency === 'USD') {
-    if (this.price?.usd && this.currencyRates?.usdToBdt && this.price.usd) {
-      this.price.bdt = this.currencyRates.usdToBdt * this.price.usd;
+    // Comprehensive currency conversion logic
+    const convertCurrency = (inputValue: number, rate: number) =>
+      inputValue && rate ? Number((inputValue * rate).toFixed(2)) : 0;
+
+    // Currency conversion helper function
+    const performCurrencyConversion = (
+      inputCurrency: 'USD' | 'CNY',
+      currencyObj: any,
+      currencyRates: any
+    ) => {
+      if (!currencyObj || !currencyRates) return currencyObj;
+
+      const conversionRates = {
+        USD: {
+          toBDT: currencyRates.usdToBdt,
+          toCNY: 7,
+        },
+        CNY: {
+          toBDT: currencyRates.cnyToBdt,
+          toUSD: 1 / 7,
+        },
+      };
+
+      const rates = conversionRates[inputCurrency];
+
+      // Conversion based on input currency
+      if (inputCurrency === 'USD' && currencyObj.usd) {
+        currencyObj.bdt = convertCurrency(currencyObj.usd, rates.toBDT);
+
+        // Calculate CNY only if not provided
+        if (!currencyObj.cny && inputCurrency === 'USD') {
+          currencyObj.cny = convertCurrency(currencyObj.usd, (rates as { toCNY: number }).toCNY);
+        }
+      } else if (inputCurrency === 'CNY' && currencyObj.cny) {
+        currencyObj.bdt = convertCurrency(currencyObj.cny, rates.toBDT);
+
+        // Calculate USD only if not provided
+        if (!currencyObj.usd && 'toUSD' in rates) {
+          currencyObj.usd = convertCurrency(currencyObj.cny, rates.toUSD);
+        }
+      }
+
+      return currencyObj;
+    };
+
+    // Perform conversions
+    if (this.price && this.currencyRates) {
+      this.price = performCurrencyConversion(
+        this.inputCurrency,
+        this.price,
+        this.currencyRates
+      );
     }
-    if (this.expense && this.currencyRates?.usdToBdt && this.expense.usd) {
-      this.expense.bdt = this.currencyRates.usdToBdt * this.expense.usd;
+
+    if (this.expense && this.currencyRates) {
+      this.expense = performCurrencyConversion(
+        this.inputCurrency,
+        this.expense,
+        this.currencyRates
+      );
     }
+
+    // Quantity pricing conversion
     if (this.quantityPricing?.ranges?.length) {
       this.quantityPricing.ranges.forEach((range) => {
-        if (range.price?.usd && this.currencyRates?.usdToBdt) {
-          range.price.bdt = this.currencyRates.usdToBdt * range.price.usd;
+        if (range.price && this.currencyRates) {
+          range.set('price', performCurrencyConversion(
+            this.inputCurrency,
+            range.price,
+            this.currencyRates
+          ));
         }
       });
     }
-  } else if (this.inputCurrency === 'CNY') {
-    if (this.price?.cny && this.currencyRates && this.currencyRates.cnyToBdt) {
-      this.price.bdt = this.currencyRates.cnyToBdt * this.price.cny;
-    }
-    if (
-      this.expense?.cny !== undefined &&
-      this.currencyRates?.cnyToBdt &&
-      this.expense.cny
-    ) {
-      this.expense.bdt = this.currencyRates.cnyToBdt * this.expense.cny;
-    }
-    if (this.quantityPricing?.ranges?.length) {
-      this.quantityPricing.ranges.forEach((range) => {
-        if (
-          range.price?.usd &&
-          this.currencyRates?.usdToBdt &&
-          range.price.cny
-        ) {
-          range.price.bdt = this.currencyRates.cnyToBdt * range.price.cny;
-        }
-      });
-    }
-  }
 
-  next();
+    next();
+  } catch (error) {
+    next(error as Error);
+  }
 });
 
 // Indexes

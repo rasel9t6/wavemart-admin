@@ -1,10 +1,11 @@
-import Collection from '@/lib/models/Category';
+import Category from '@/lib/models/Category';
 import Product from '@/lib/models/Product';
+import Subcategory from '@/lib/models/Subcategory';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
-
 import { NextRequest, NextResponse } from 'next/server';
+
 
 export async function GET(
   req: NextRequest,
@@ -14,7 +15,7 @@ export async function GET(
     await connectToDB();
 
     // Use lean() to get a plain JavaScript object and populate any necessary fields
-    const product = await Product.findById(params.productId).lean() as any;
+    const product = (await Product.findById(params.productId).lean()) as any;
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
@@ -33,7 +34,7 @@ export async function GET(
       colors: product.colors || [],
       collections: product.collections || [],
     };
-
+    revalidatePath(`/product/${params.productId}`);
     return NextResponse.json(response);
   } catch (error: any) {
     console.error('Product fetch error:', error);
@@ -44,140 +45,110 @@ export async function GET(
   }
 }
 
-// export const POST = async (
-//   req: NextRequest,
-//   { params }: { params: { productId: string } }
-// ) => {
-//   try {
-//     const { userId } = auth();
-//     if (!userId) {
-//       return new NextResponse('Unauthorized', { status: 401 });
-//     }
 
-//     await connectToDB();
-//     const product = await Product.findById(params.productId);
-
-//     if (!product) {
-//       return new NextResponse(
-//         JSON.stringify({ message: 'Product not found' }),
-//         { status: 404 }
-//       );
-//     }
-
-//     const updateData = await req.json();
-
-//     // Handle collections separately
-//     const currentCollections = [...product.collections];
-
-//     // Create update object without collections first
-//     const updateFields: { [key: string]: any } = {};
-//     const allowedFields = [
-//       'title',
-//       'description',
-//       'media',
-//       'category',
-//       'tags',
-//       'sizes',
-//       'colors',
-//       'price',
-//       'expense',
-//     ];
-
-//     // Only include fields that are actually provided in the request
-//     allowedFields.forEach((field) => {
-//       if (updateData[field] !== undefined) {
-//         updateFields[field] = updateData[field];
-//       }
-//     });
-
-//     // Update the product first
-//     const updatedProduct = await Product.findByIdAndUpdate(
-//       params.productId,
-//       { $set: updateFields },
-//       { new: true, runValidators: true }
-//     );
-
-//     // Handle collections update if provided
-//     if (updateData.collections !== undefined) {
-//       // Update the collections array separately
-//       await Product.findByIdAndUpdate(
-//         params.productId,
-//         { $set: { collections: updateData.collections } },
-//         { new: true, runValidators: true }
-//       );
-
-//       const addedCollections = updateData.collections.filter(
-//         (collectionId: string) =>
-//           !currentCollections.map((c) => c.toString()).includes(collectionId)
-//       );
-
-//       const removedCollections = currentCollections
-//         .map((c) => c.toString())
-//         .filter(
-//           (collectionId: string) =>
-//             !updateData.collections.includes(collectionId)
-//         );
-
-//       // Update collections
-//       await Promise.all([
-//         ...addedCollections.map((collectionId: string) =>
-//           Collection.findByIdAndUpdate(collectionId, {
-//             $addToSet: { products: product._id },
-//           })
-//         ),
-//         ...removedCollections.map((collectionId: string) =>
-//           Collection.findByIdAndUpdate(collectionId, {
-//             $pull: { products: product._id },
-//           })
-//         ),
-//       ]);
-//     }
-//     revalidatePath('/products');
-//     return new NextResponse(JSON.stringify(updatedProduct), { status: 200 });
-//   } catch (error) {
-//     console.error('[PRODUCT_UPDATE]', error);
-//     return new NextResponse(
-//       JSON.stringify({ message: 'Internal server error' }),
-//       { status: 500 }
-//     );
-//   }
-// };
-
-export async function PATCH(
+export const POST = async (
   req: NextRequest,
   { params }: { params: { productId: string } }
-) {
+) => {
   try {
+    const { userId } = auth();
+
+    if (!userId) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
     await connectToDB();
-    const body = await req.json();
 
     const product = await Product.findById(params.productId);
+
     if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-    }
-
-    // Update currency rates if provided
-    if (body.currencyRates) {
-      await product.updateCurrencyRates(
-        body.currencyRates.usdToCny,
-        body.currencyRates.cnyToBdt
+      return new NextResponse(
+        JSON.stringify({ message: 'Product not found' }),
+        { status: 404 }
       );
-      delete body.currencyRates; // Remove from body to prevent double update
     }
 
-    // Update other fields
-    Object.assign(product, body);
-    await product.validate();
-    await product.save();
+    const {
+      title,
+      description,
+      media,
+      category,
+      subcategories,
+      tags,
+      sizes,
+      colors,
+      minimumOrderQuantity,
+      inputCurrency,
+      price,
+      expense,
+      quantityPricing,
+      currencyRates,
+    } = await req.json();
 
-    return NextResponse.json(product);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || 'Failed to update product' },
-      { status: 400 }
-    );
+    // Validation checks
+    if (!title || !description || !media || !category || !price) {
+      return new NextResponse('Not enough data to update the product', {
+        status: 400,
+      });
+    }
+
+    // Prepare update object with all possible fields
+    const updateData = {
+      title,
+      description,
+      media,
+      category,
+      ...(subcategories && { subcategories }),
+      tags,
+      sizes,
+      colors,
+      ...(minimumOrderQuantity && { minimumOrderQuantity }),
+      ...(inputCurrency && { inputCurrency }),
+      price,
+      expense,
+      ...(quantityPricing && {
+        quantityPricing: {
+          ranges: quantityPricing.ranges || [],
+        },
+      }),
+      ...(currencyRates && { currencyRates }),
+    };
+
+    // Update product
+    const updatedProduct = await Product.findByIdAndUpdate(
+      product._id,
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate([
+      { path: 'category', model: Category },
+      { path: 'subcategories', model: Subcategory },
+    ]);
+
+    // Explicitly save to trigger pre-save middleware for currency conversions
+    await updatedProduct.save();
+
+    return NextResponse.json(updatedProduct, { status: 200 });
+  } catch (err: any) {
+    console.error('[productId_POST]', err);
+
+    // Handle specific mongoose validation errors
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map((e: any) => e.message);
+      return new NextResponse(
+        JSON.stringify({
+          message: 'Validation Error',
+          errors,
+        }),
+        { status: 400 }
+      );
+    }
+
+    return new NextResponse('Internal error', { status: 500 });
   }
-}
+};
 export const DELETE = async (
   req: NextRequest,
   { params }: { params: { productId: string } }
@@ -204,8 +175,8 @@ export const DELETE = async (
 
     // Update collections
     await Promise.all(
-      product.collections.map((collectionId: string) =>
-        Collection.findByIdAndUpdate(collectionId, {
+      product.category.map((categoryId: string) =>
+        Category.findByIdAndUpdate(categoryId, {
           $pull: { products: product._id },
         })
       )
