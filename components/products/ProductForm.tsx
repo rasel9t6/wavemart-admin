@@ -173,12 +173,14 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <FormLabel>Images</FormLabel>
                 <FormControl>
                   <ImageUpload
-                    value={field.value}
-                    onChange={(url) => field.onChange([...field.value, url])}
+                    value={field.value || []}
+                    onChange={(url) =>
+                      field.onChange((prev: string[] = []) => [...prev, url])
+                    }
                     onRemove={(url) =>
-                      field.onChange([
-                        ...field.value.filter((image) => image !== url),
-                      ])
+                      field.onChange((prev: string[] = []) =>
+                        prev.filter((image) => image !== url)
+                      )
                     }
                   />
                 </FormControl>
@@ -247,6 +249,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       step="0.01"
                       min="0"
                       {...field}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(
+                          value === '' ? undefined : parseFloat(value)
+                        );
+                      }}
                       onKeyDown={handleKeyPress}
                     />
                   </FormControl>
@@ -544,11 +552,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                         }
                         value={field.value || []}
                         onChange={(_id) =>
-                          field.onChange([...field.value, _id])
+                          field.onChange([...(field.value || []), _id])
                         }
                         onRemove={(idToRemove) =>
                           field.onChange([
-                            ...field.value.filter(
+                            ...(field.value || []).filter(
                               (subcategoryId: string) =>
                                 subcategoryId !== idToRemove
                             ),
@@ -591,20 +599,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               name="colors"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Colors</FormLabel>
+                  <FormLabel>Colors Images</FormLabel>
                   <FormControl>
-                    <MultiText
-                      placeholder="Colors"
-                      value={field.value}
-                      onChange={(color) =>
-                        field.onChange([...field.value, color.toLowerCase()])
+                    <ImageUpload
+                      value={field.value || []}
+                      onChange={(url) =>
+                        field.onChange((prev: string[] = []) => [...prev, url])
                       }
-                      onRemove={(colorToRemove) =>
-                        field.onChange([
-                          ...field.value.filter(
-                            (color) => color !== colorToRemove
-                          ),
-                        ])
+                      onRemove={(url) =>
+                        field.onChange((prev: string[] = []) =>
+                          prev.filter((image) => image !== url)
+                        )
                       }
                     />
                   </FormControl>
@@ -628,7 +633,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       }
                       onRemove={(sizeToRemove) =>
                         field.onChange([
-                          ...field.value.filter(
+                          ...(field.value ?? []).filter(
                             (size) => size !== sizeToRemove
                           ),
                         ])

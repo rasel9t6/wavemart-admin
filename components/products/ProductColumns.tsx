@@ -16,26 +16,34 @@ export const columns: ColumnDef<ProductType>[] = [
     ),
   },
   {
-    accessorKey: 'categories',
-    header: 'Categories',
-    cell: ({ row }) => row.original.category,
+    accessorKey: 'category.name',
+    header: 'Category',
+    cell: ({ row }) => {
+      const category = typeof row.original.category === 'object' ? row.original.category?.name : row.original.category || 'N/A';
+      const subcategories =
+        row.original.subcategories?.map((sub: any) => sub.name).join(', ') ||
+        'N/A';
+
+      return (
+        <div>
+          <p>
+            <strong>Category:</strong> {category}
+          </p>
+          <p>
+            <strong>Subcategories:</strong> {subcategories}
+          </p>
+        </div>
+      );
+    },
   },
   {
     header: 'Price',
     cell: ({ row }) => {
       const product = row.original;
-
-      // Check for CNY price first
-      if (product.price?.cny !== undefined && product.price.cny !== null) {
+      if (product.price?.cny !== undefined)
         return `¥ ${product.price.cny.toFixed(2)}`;
-      }
-
-      // If no CNY price, check for USD price
-      if (product.price?.usd !== undefined && product.price.usd !== null) {
+      if (product.price?.usd !== undefined)
         return `$ ${product.price.usd.toFixed(2)}`;
-      }
-
-      // If no price found
       return 'N/A';
     },
   },
@@ -43,18 +51,10 @@ export const columns: ColumnDef<ProductType>[] = [
     header: 'Expense',
     cell: ({ row }) => {
       const product = row.original;
-
-      // Check for CNY expense first
-      if (product.expense?.cny !== undefined && product.expense.cny !== null) {
+      if (product.expense?.cny !== undefined)
         return `¥ ${product.expense.cny.toFixed(2)}`;
-      }
-
-      // If no CNY expense, check for USD expense
-      if (product.expense?.usd !== undefined && product.expense.usd !== null) {
+      if (product.expense?.usd !== undefined)
         return `$ ${product.expense.usd.toFixed(2)}`;
-      }
-
-      // If no expense found
       return 'N/A';
     },
   },

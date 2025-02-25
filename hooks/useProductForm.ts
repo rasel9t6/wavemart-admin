@@ -14,7 +14,7 @@ const getDefaultValues = (initialData?: ProductType): ProductFormValues => ({
   slug: initialData?.slug || '',
   description: initialData?.description || '',
   media: initialData?.media || [],
-  category: initialData?.category || '',
+  category: typeof initialData?.category === 'object' ? initialData?.category.name : (initialData?.category || ''),
   subcategories: initialData?.subcategories || [],
   tags: initialData?.tags || [],
   sizes: initialData?.sizes || [],

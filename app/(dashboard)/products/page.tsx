@@ -8,12 +8,10 @@ export default async function ProductPage() {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/products`
   );
-  if (!res.ok) {
-    throw new Error('Collections not found');
-  }
-  const data = await res.json();
-  const products = data.products;
-  console.log(products);
+  if (!res.ok) throw new Error('Failed to fetch products');
+
+  const { products } = await res.json();
+
   return (
     <div className="px-10 py-5">
       <div className="flex items-center justify-between">

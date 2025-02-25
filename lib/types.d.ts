@@ -4,7 +4,7 @@ export type ProductType = {
   slug: string;
   description?: string;
   media: string[];
-  category: string;
+  category: string | { name: string };
   subcategories: string[];
   tags: string[];
   sizes: string[];

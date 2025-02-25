@@ -60,7 +60,7 @@ export default function Delete({ id, item }: { id: string; item: string }) {
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction className="bg-red-1 text-white" onClick={onDelete}>
-            Delete
+            {loading ? 'Deleting...' : `Delete`}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

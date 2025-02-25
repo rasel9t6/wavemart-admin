@@ -27,18 +27,45 @@ export const productFormSchema = z.object({
   description: z
     .string()
     .max(2000, 'Description cannot exceed 2000 characters')
-    .optional(),
-  media: z
-    .array(z.string().url('Please provide a valid URL for media'))
-    .min(1, 'At least one media item is required'),
+    ,
+  media: z.preprocess(
+    (value) => {
+      // If the value is a function (as returned by field.onChange), execute it to get the array
+      if (typeof value === 'function') {
+        try {
+          const result = value([]);
+          return Array.isArray(result) ? result : [];
+        } catch {
+          return [];
+        }
+      }
+      // Otherwise, return the value directly if it's already an array
+      return Array.isArray(value) ? value : [];
+    },
+    z
+      .array(z.string().url('Please provide a valid URL for media'))
+      .min(1, 'At least one media item is required')
+  ),
   category: z.string().min(1, 'Category selection is required'),
   subcategories: z
     .array(z.string())
-    .min(1, 'At least one subcategory must be selected'),
+    .min(1, 'At least one subcategory must be selected')
+    .optional(),
   tags: z.array(z.string()).min(1, 'At least one tag is required'),
   sizes: z.array(z.string()).min(1, 'At least one size must be selected'),
-  colors: z
-    .array(z.string().trim().toLowerCase()),
+  colors: z.preprocess((value) => {
+    // If the value is a function (as returned by field.onChange), execute it to get the array
+    if (typeof value === 'function') {
+      try {
+        const result = value([]);
+        return Array.isArray(result) ? result : [];
+      } catch {
+        return [];
+      }
+    }
+    // Otherwise, return the value directly if it's already an array
+    return Array.isArray(value) ? value : [];
+  }, z.array(z.string().url('Please provide a valid URL for media')).min(1, 'At least one media item is required')),
   minimumOrderQuantity: z
     .number()
     .min(1, 'Minimum order quantity must be at least 1'),

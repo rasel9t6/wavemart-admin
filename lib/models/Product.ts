@@ -159,7 +159,19 @@ const ProductSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+// Populate category and subcategories automatically
+ProductSchema.virtual('categoryDetails', {
+  ref: 'Category',
+  localField: 'category',
+  foreignField: '_id',
+  justOne: true,
+});
 
+ProductSchema.virtual('subcategoryDetails', {
+  ref: 'Subcategory',
+  localField: 'subcategories',
+  foreignField: '_id',
+});
 // Generate slug before saving
 ProductSchema.pre('save', function (next) {
   try {

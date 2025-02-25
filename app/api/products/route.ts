@@ -70,7 +70,6 @@ export async function GET(req: NextRequest) {
 
     // Build query
     const query: any = {};
-
     if (category) query.category = category;
     if (tags) query.tags = { $in: tags };
     if (minPrice || maxPrice) {
@@ -85,8 +84,10 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Execute query with pagination
+    // Populate category and subcategories
     const products = await Product.find(query)
+      .populate('category', 'name')
+      .populate('subcategories', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -101,15 +102,11 @@ export async function GET(req: NextRequest) {
         limit,
         pages: Math.ceil(total / limit),
       },
-      headers: {
-        'Access-Control-Allow-Origin': process.env.ECOMMERCE_STORE_URL || '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
     });
   } catch (error: any) {
+    console.error('[PRODUCTS_GET]', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch products' },
+      { error: 'Failed to fetch products' },
       { status: 500 }
     );
   }
