@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import slugify from 'slugify';
+import Category from './Category';
 
 // Create custom type for price and expense
 const CurrencySchema = new mongoose.Schema(
@@ -172,6 +173,13 @@ ProductSchema.virtual('subcategoryDetails', {
   localField: 'subcategories',
   foreignField: '_id',
 });
+ProductSchema.post('save', async function (doc) {
+  if (doc.category) {
+    await Category.findByIdAndUpdate(doc.category, {
+      $addToSet: { products: doc._id },
+    });
+  }
+});
 // Generate slug before saving
 ProductSchema.pre('save', function (next) {
   try {
@@ -211,7 +219,10 @@ ProductSchema.pre('save', function (next) {
 
         // Calculate CNY only if not provided
         if (!currencyObj.cny && inputCurrency === 'USD') {
-          currencyObj.cny = convertCurrency(currencyObj.usd, (rates as { toCNY: number }).toCNY);
+          currencyObj.cny = convertCurrency(
+            currencyObj.usd,
+            (rates as { toCNY: number }).toCNY
+          );
         }
       } else if (inputCurrency === 'CNY' && currencyObj.cny) {
         currencyObj.bdt = convertCurrency(currencyObj.cny, rates.toBDT);
@@ -246,11 +257,14 @@ ProductSchema.pre('save', function (next) {
     if (this.quantityPricing?.ranges?.length) {
       this.quantityPricing.ranges.forEach((range) => {
         if (range.price && this.currencyRates) {
-          range.set('price', performCurrencyConversion(
-            this.inputCurrency,
-            range.price,
-            this.currencyRates
-          ));
+          range.set(
+            'price',
+            performCurrencyConversion(
+              this.inputCurrency,
+              range.price,
+              this.currencyRates
+            )
+          );
         }
       });
     }

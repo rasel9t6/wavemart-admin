@@ -32,7 +32,7 @@ export async function GET(
       tags: product.tags || [],
       sizes: product.sizes || [],
       colors: product.colors || [],
-      collections: product.collections || [],
+      categories: product.category || [],
     };
     revalidatePath(`/product/${params.productId}`);
     return NextResponse.json(response);
