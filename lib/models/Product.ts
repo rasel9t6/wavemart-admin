@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import slugify from 'slugify';
 import Category from './Category';
+import Subcategory from './Subcategory';
 
 // Create custom type for price and expense
 const CurrencySchema = new mongoose.Schema(
@@ -174,12 +175,28 @@ ProductSchema.virtual('subcategoryDetails', {
   foreignField: '_id',
 });
 ProductSchema.post('save', async function (doc) {
-  if (doc.category) {
-    await Category.findByIdAndUpdate(doc.category, {
-      $addToSet: { products: doc._id },
-    });
+  try {
+    // ✅ Update the parent Category to include this product
+    if (doc.category) {
+      await Category.findByIdAndUpdate(doc.category, {
+        $addToSet: { products: doc._id },
+      });
+      console.log(`✅ Category Updated: ${doc.category}`);
+    }
+
+    // ✅ Update all associated Subcategories to include this product
+    if (doc.subcategories && doc.subcategories.length > 0) {
+      await Subcategory.updateMany(
+        { _id: { $in: doc.subcategories } },
+        { $addToSet: { products: doc._id } }
+      );
+      console.log(`✅ Subcategories Updated: ${doc.subcategories}`);
+    }
+  } catch (error) {
+    console.error('❌ Error updating Category/Subcategory:', error);
   }
 });
+
 // Generate slug before saving
 ProductSchema.pre('save', function (next) {
   try {

@@ -2,6 +2,7 @@ import Collection from '@/lib/models/Category';
 import Product from '@/lib/models/Product';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
+import mongoose from 'mongoose';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -63,6 +64,7 @@ export async function GET(req: NextRequest) {
 
     // Filtering parameters
     const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const tags = searchParams.get('tags')?.split(',');
@@ -70,7 +72,9 @@ export async function GET(req: NextRequest) {
 
     // Build query
     const query: any = {};
-    if (category) query.category = category;
+    if (category) query.category = new mongoose.Types.ObjectId(category);
+    if (subcategory)
+      query.subcategories = new mongoose.Types.ObjectId(subcategory);
     if (tags) query.tags = { $in: tags };
     if (minPrice || maxPrice) {
       query['price.cny'] = {};
@@ -84,18 +88,27 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Populate category and subcategories
+    // Fetch products and populate category & subcategories
     const products = await Product.find(query)
       .populate('category', 'name')
       .populate('subcategories', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean(); // Convert Mongoose documents to plain objects
+
+    // Convert subcategories to an array of names
+    const formattedProducts = products.map((product) => ({
+      ...product,
+      category: product.category?.name || 'Unknown',
+      subcategories:
+        product.subcategories?.map((sub: any) => sub.name).join(', ') || 'None',
+    }));
 
     const total = await Product.countDocuments(query);
 
     return NextResponse.json({
-      products,
+      products: formattedProducts,
       pagination: {
         total,
         page,
