@@ -10,11 +10,15 @@ import { ProductFormValues, productFormSchema } from '@/lib/type';
 import slugify from 'slugify';
 
 const getDefaultValues = (initialData?: ProductType): ProductFormValues => ({
+  sku: initialData?.sku || '',
   title: initialData?.title || '',
   slug: initialData?.slug || '',
   description: initialData?.description || '',
   media: initialData?.media || [],
-  category: typeof initialData?.category === 'object' ? initialData?.category.name : (initialData?.category || ''),
+  category:
+    typeof initialData?.category === 'object'
+      ? initialData?.category.name
+      : initialData?.category || '',
   subcategories: initialData?.subcategories || [],
   tags: initialData?.tags || [],
   sizes: initialData?.sizes || [],
@@ -84,7 +88,7 @@ export const useProductForm = (initialData?: ProductType) => {
       const cleanedValues = JSON.parse(JSON.stringify(values));
 
       const url = initialData
-        ? `/api/products/${initialData._id}`
+        ? `/api/products/${initialData.slug}`
         : '/api/products';
       const method = 'POST';
 

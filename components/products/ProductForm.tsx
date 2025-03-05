@@ -63,57 +63,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     );
   };
 
-  // Function to calculate and update BDT prices based on input currency
-  // useEffect(() => {
-  //   const subscription = form.watch((value, { name }) => {
-  //     if (
-  //       name?.includes('currencyRates') ||
-  //       name?.includes('price') ||
-  //       name?.includes('expense') ||
-  //       name?.includes('quantityPricing') ||
-  //       name?.includes('inputCurrency')
-  //     ) {
-  //       const inputCurrency = form.getValues('inputCurrency').toLowerCase();
-  //       const usdToBdt = form.getValues('currencyRates.usdToBdt') || 0;
-  //       const cnyToBdt = form.getValues('currencyRates.cnyToBdt') || 0;
-
-  //       // Update base price and expense
-  //       const price = form.getValues(`price.${inputCurrency}`) || 0;
-  //       const expense = form.getValues(`expense.${inputCurrency}`) || 0;
-
-  //       if (inputCurrency === 'usd') {
-  //         form.setValue('price.bdt', price * usdToBdt);
-  //         form.setValue('expense.bdt', expense * usdToBdt);
-  //       } else if (inputCurrency === 'cny') {
-  //         form.setValue('price.bdt', price * cnyToBdt);
-  //         form.setValue('expense.bdt', expense * cnyToBdt);
-  //       }
-
-  //       // Update quantity pricing ranges
-  //       const ranges = form.getValues('quantityPricing.ranges') || [];
-  //       ranges.forEach((_, index) => {
-  //         const rangePrice =
-  //           form.getValues(
-  //             `quantityPricing.ranges.${index}.price.${inputCurrency}`
-  //           ) || 0;
-
-  //         if (inputCurrency === 'usd') {
-  //           form.setValue(
-  //             `quantityPricing.ranges.${index}.price.bdt`,
-  //             rangePrice * usdToBdt
-  //           );
-  //         } else if (inputCurrency === 'cny') {
-  //           form.setValue(
-  //             `quantityPricing.ranges.${index}.price.bdt`,
-  //             rangePrice * cnyToBdt
-  //           );
-  //         }
-  //       });
-  //     }
-  //   });
-
-  //   return () => subscription.unsubscribe();
-  // }, [form]);
 
   return (
     <div className="p-10">
@@ -128,6 +77,23 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       <Separator className="mb-7 mt-4 bg-gray-1" />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="sku"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>SKU(ID)</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Product ID"
+                    {...field}
+                    onKeyDown={handleKeyPress}
+                  />
+                </FormControl>
+                <FormMessage className="text-red-1" />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="title"

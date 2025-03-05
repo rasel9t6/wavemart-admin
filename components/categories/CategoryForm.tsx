@@ -12,6 +12,10 @@ import Delete from '../custom-ui/Delete';
 
 // Types matching MongoDB Schema
 type Subcategory = {
+  shippingCharge: {
+    byAir: { min: number; max: number };
+    bySea: { min: number; max: number };
+  };
   name: string;
   slug: string;
   title: string;
@@ -24,6 +28,10 @@ type Subcategory = {
 };
 interface CategoryFormProps {
   initialData?: {
+    shippingCharge: {
+      byAir: { min: number; max: number };
+      bySea: { min: number; max: number };
+    };
     _id: string;
     slug: string;
     name: string;
@@ -46,16 +54,70 @@ const subcategorySchema = z.object({
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
   parentId: z.string().optional(),
+  shippingCharge: z
+    .object({
+      byAir: z.object({
+        min: z
+          .number()
+          .min(0, 'Min shipping charge must be positive')
+          .default(0),
+        max: z
+          .number()
+          .min(0, 'Max shipping charge must be positive')
+          .default(0),
+      }),
+      bySea: z.object({
+        min: z
+          .number()
+          .min(0, 'Min shipping charge must be positive')
+          .default(0),
+        max: z
+          .number()
+          .min(0, 'Max shipping charge must be positive')
+          .default(0),
+      }),
+    })
+    .default({
+      byAir: { min: 0, max: 0 },
+      bySea: { min: 0, max: 0 },
+    }),
 });
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
   title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
+  description: z.string().min(1, 'Description is required'),
   icon: z.string().min(1, 'Icon is required'),
   thumbnail: z.string().min(1, 'Thumbnail is required'),
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
+  shippingCharge: z
+    .object({
+      byAir: z.object({
+        min: z
+          .number()
+          .min(0, 'Min shipping charge must be positive')
+          .default(0),
+        max: z
+          .number()
+          .min(0, 'Max shipping charge must be positive')
+          .default(0),
+      }),
+      bySea: z.object({
+        min: z
+          .number()
+          .min(0, 'Min shipping charge must be positive')
+          .default(0),
+        max: z
+          .number()
+          .min(0, 'Max shipping charge must be positive')
+          .default(0),
+      }),
+    })
+    .default({
+      byAir: { min: 0, max: 0 },
+      bySea: { min: 0, max: 0 },
+    }),
   subcategories: z.array(subcategorySchema).default([]),
 });
 
@@ -64,15 +126,27 @@ type FormValues = z.infer<typeof formSchema>;
 const CategoryForm = ({ initialData }: CategoryFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const [isSubcategoryVisible, setIsSubcategoryVisible] = useState(
+    (initialData?.subcategories?.length ?? 0) > 0
+  );
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData
       ? {
           ...initialData,
+          shippingCharge: initialData.shippingCharge || {
+            byAir: { min: 0, max: 0 },
+            bySea: { min: 0, max: 0 },
+          },
           subcategories:
             initialData.subcategories.map((sub) => ({
               ...sub,
               parentId: initialData._id,
+              shippingCharge: sub.shippingCharge || {
+                byAir: { min: 0, max: 0 },
+                bySea: { min: 0, max: 0 },
+              },
             })) || [],
         }
       : {
@@ -83,14 +157,31 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
           thumbnail: '',
           isActive: true,
           sortOrder: 0,
+          shippingCharge: {
+            byAir: { min: 0, max: 0 },
+            bySea: { min: 0, max: 0 },
+          },
           subcategories: [],
         },
+    mode: 'onChange',
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: 'subcategories',
   });
+  if (fields.length === 0 && initialData?.subcategories?.length) {
+    replace(
+      initialData.subcategories.map((sub) => ({
+        ...sub,
+        parentId: initialData._id,
+        shippingCharge: sub.shippingCharge || {
+          byAir: { min: 0, max: 0 },
+          bySea: { min: 0, max: 0 },
+        },
+      }))
+    );
+  }
   const handleFormSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
@@ -106,7 +197,7 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
       };
 
       const url = initialData
-        ? `/api/categories/${initialData.slug}`
+        ? `/api/categories/${initialData._id}`
         : '/api/categories';
 
       const response = await fetch(url, {
@@ -198,6 +289,95 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
                 className="min-h-[120px] w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Shipping Charge (BDT)</h2>
+
+              {/* By Air */}
+              <div className="mt-2 grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    By Air - Min
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    {...form.register('shippingCharge.byAir.min', {
+                      valueAsNumber: true,
+                    })}
+                    placeholder="Min charge for Air..."
+                    className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {form.formState.errors.shippingCharge?.byAir?.min && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.shippingCharge.byAir.min.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    By Air - Max
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    {...form.register('shippingCharge.byAir.max', {
+                      valueAsNumber: true,
+                    })}
+                    placeholder="Max charge for Air..."
+                    className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {form.formState.errors.shippingCharge?.byAir?.max && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.shippingCharge.byAir.max.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* By Sea */}
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    By Sea - Min
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    {...form.register('shippingCharge.bySea.min', {
+                      valueAsNumber: true,
+                    })}
+                    placeholder="Min charge for Sea..."
+                    className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {form.formState.errors.shippingCharge?.bySea?.min && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.shippingCharge.bySea.min.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    By Sea - Max
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    {...form.register('shippingCharge.bySea.max', {
+                      valueAsNumber: true,
+                    })}
+                    placeholder="Max charge for Sea..."
+                    className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {form.formState.errors.shippingCharge?.bySea?.max && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.shippingCharge.bySea.max.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="mb-4">
@@ -262,156 +442,176 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Subcategories</h2>
-                <button
-                  type="button"
-                  onClick={() =>
-                    append({
-                      name: '',
-                      title: '',
-                      description: '',
-                      icon: '',
-                      thumbnail: '',
-                      isActive: true,
-                      sortOrder: fields.length,
-                      parentId: initialData?._id || '',
-                    })
-                  }
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
-                >
-                  Add Subcategory
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIsSubcategoryVisible(!isSubcategoryVisible)
+                    }
+                    className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+                  >
+                    {isSubcategoryVisible ? 'Hide' : 'Show'} Subcategories
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSubcategoryVisible(true);
+                      append({
+                        name: '',
+                        title: '',
+                        description: '',
+                        icon: '',
+                        thumbnail: '',
+                        isActive: true,
+                        sortOrder: fields.length,
+                        parentId: initialData?._id || '',
+                        shippingCharge: {
+                          byAir: { min: 0, max: 0 },
+                          bySea: { min: 0, max: 0 },
+                        },
+                      });
+                    }}
+                    className="rounded-md border border-blue-300 bg-blue-100 px-4 py-2 text-sm text-blue-500 transition-colors duration-300 hover:bg-gray-50"
+                  >
+                    Add Subcategory
+                  </button>
+                </div>
               </div>
 
-              {fields.map((field, index) => (
-                <div key={field.id} className="rounded-lg border p-4">
-                  <div className="mb-4 flex justify-between">
-                    <h3 className="text-lg font-medium">
-                      Subcategory {index + 1}
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => remove(index)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="mb-4">
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
-                        Name
-                      </label>
-                      <input
-                        {...form.register(`subcategories.${index}.name`)}
-                        placeholder="Enter subcategory name..."
-                        className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+              {isSubcategoryVisible &&
+                fields.map((field, index) => (
+                  <div key={field.id} className="rounded-lg border p-4">
+                    <div className="mb-4 flex justify-between">
+                      <h3 className="text-lg font-medium">
+                        Subcategory {index + 1}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => remove(index)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
                     </div>
 
-                    <div className="mb-4">
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
-                        Title
-                      </label>
-                      <input
-                        {...form.register(`subcategories.${index}.title`)}
-                        placeholder="Enter subcategory title..."
-                        className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
-                        Description
-                      </label>
-                      <textarea
-                        {...form.register(`subcategories.${index}.description`)}
-                        placeholder="Describe your subcategory..."
-                        className="min-h-[120px] w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-4">
                       <div className="mb-4">
                         <label className="mb-1 block text-sm font-medium text-gray-700">
-                          Icon
-                        </label>
-                        <ImageUpload
-                          value={
-                            form.watch(`subcategories.${index}.icon`)
-                              ? [
-                                  form.watch(`subcategories.${index}.icon`),
-                                ].filter((x): x is string => !!x)
-                              : []
-                          }
-                          onChange={(url) =>
-                            form.setValue(`subcategories.${index}.icon`, url)
-                          }
-                          onRemove={() =>
-                            form.setValue(`subcategories.${index}.icon`, '')
-                          }
-                        />
-                      </div>
-
-                      <div className="mb-4">
-                        <label className="mb-1 block text-sm font-medium text-gray-700">
-                          Thumbnail
-                        </label>
-                        <ImageUpload
-                          value={
-                            form.watch(`subcategories.${index}.thumbnail`)
-                              ? [
-                                  form.watch(
-                                    `subcategories.${index}.thumbnail`
-                                  ),
-                                ].filter((x): x is string => !!x)
-                              : []
-                          }
-                          onChange={(url) =>
-                            form.setValue(
-                              `subcategories.${index}.thumbnail`,
-                              url
-                            )
-                          }
-                          onRemove={() =>
-                            form.setValue(
-                              `subcategories.${index}.thumbnail`,
-                              ''
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="mb-1 block text-sm font-medium text-gray-700">
-                          Sort Order
+                          Name
                         </label>
                         <input
-                          type="number"
-                          {...form.register(
-                            `subcategories.${index}.sortOrder`,
-                            {
-                              valueAsNumber: true,
-                            }
-                          )}
-                          defaultValue={index}
+                          {...form.register(`subcategories.${index}.name`)}
+                          placeholder="Enter subcategory name..."
                           className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                      <label className="text-sm font-medium text-gray-700">
-                        Active Status
-                      </label>
-                      <input
-                        type="checkbox"
-                        {...form.register(`subcategories.${index}.isActive`)}
-                        className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
+                      <div className="mb-4">
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                          Title
+                        </label>
+                        <input
+                          {...form.register(`subcategories.${index}.title`)}
+                          placeholder="Enter subcategory title..."
+                          className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                          Description
+                        </label>
+                        <textarea
+                          {...form.register(
+                            `subcategories.${index}.description`
+                          )}
+                          placeholder="Describe your subcategory..."
+                          className="min-h-[120px] w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      {/* Shipping Charge Section for Subcategory */}
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold">
+                          Shipping Charge
+                        </h3>
+
+                        {/* By Air */}
+                        <div className="mt-2 grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              By Air - Min
+                            </label>
+                            <input
+                              type="number"
+                              {...form.register(
+                                `subcategories.${index}.shippingCharge.byAir.min`,
+                                { valueAsNumber: true }
+                              )}
+                              className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              By Air - Max
+                            </label>
+                            <input
+                              type="number"
+                              {...form.register(
+                                `subcategories.${index}.shippingCharge.byAir.max`,
+                                { valueAsNumber: true }
+                              )}
+                              className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2"
+                            />
+                          </div>
+                        </div>
+
+                        {/* By Sea */}
+                        <div className="mt-4 grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              By Sea - Min
+                            </label>
+                            <input
+                              type="number"
+                              {...form.register(
+                                `subcategories.${index}.shippingCharge.bySea.min`,
+                                { valueAsNumber: true }
+                              )}
+                              className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              By Sea - Max
+                            </label>
+                            <input
+                              type="number"
+                              {...form.register(
+                                `subcategories.${index}.shippingCharge.bySea.max`,
+                                { valueAsNumber: true }
+                              )}
+                              className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-lg border p-4">
+                        <label className="text-sm font-medium text-gray-700">
+                          Active Status
+                        </label>
+                        <input
+                          type="checkbox"
+                          {...form.register(`subcategories.${index}.isActive`)}
+                          className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 

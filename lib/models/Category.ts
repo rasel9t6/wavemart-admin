@@ -42,6 +42,16 @@ const categorySchema = new mongoose.Schema(
         ref: 'Product',
       },
     ],
+    shippingCharge: {
+      byAir: {
+        min: { type: Number, default: 0 },
+        max: { type: Number, default: 0 },
+      },
+      bySea: {
+        min: { type: Number, default: 0 },
+        max: { type: Number, default: 0 },
+      },
+    },
     isActive: {
       type: Boolean,
       default: true,

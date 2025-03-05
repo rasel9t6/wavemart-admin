@@ -25,6 +25,7 @@ export const POST = async (req: NextRequest) => {
       thumbnail: data.thumbnail,
       isActive: data.isActive,
       sortOrder: data.sortOrder,
+      shippingCharge: data.shippingCharge,
     };
 
     const category = await Category.create(categoryData);
@@ -40,6 +41,7 @@ export const POST = async (req: NextRequest) => {
           thumbnail: sub.thumbnail,
           isActive: sub.isActive,
           category: category._id,
+          shippingCharge: sub.shippingCharge,
         };
         const subcategory = await Subcategory.create(subcategoryData);
         return subcategory._id;
@@ -63,9 +65,10 @@ export const GET = async () => {
     const categories = await Category.find()
       .populate({
         path: 'subcategories',
-        model: 'Subcategory', // Ensure this matches your Subcategory model name
+        model: Subcategory, // Ensure this matches your Subcategory model name
       })
-      .sort({ sortOrder: 1 });
+      .sort({ sortOrder: 1 })
+      .lean();
 
     return NextResponse.json(categories);
   } catch (error: any) {

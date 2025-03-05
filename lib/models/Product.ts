@@ -61,6 +61,7 @@ const RangeSchema = new mongoose.Schema(
 
 const ProductSchema = new mongoose.Schema(
   {
+    sku: { type: String, required: true },
     title: {
       type: String,
       required: [true, 'Product title is required'],

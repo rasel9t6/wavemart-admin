@@ -19,10 +19,14 @@ export const columns: ColumnDef<ProductType>[] = [
     accessorKey: 'category.name',
     header: 'Category',
     cell: ({ row }) => {
-      const category = typeof row.original.category === 'object' ? row.original.category?.name : row.original.category || 'N/A';
-      const subcategories =
-        row.original.subcategories?.map((sub: any) => sub.name).join(', ') ||
-        'N/A';
+      const category =
+        typeof row.original.category === 'object'
+          ? row.original.category?.name
+          : row.original.category || 'N/A';
+
+      const subcategories = Array.isArray(row.original.subcategories) // ✅ Ensure it's an array
+        ? row.original.subcategories.map((sub: any) => sub.name).join(', ')
+        : 'N/A';
 
       return (
         <div>
@@ -36,6 +40,7 @@ export const columns: ColumnDef<ProductType>[] = [
       );
     },
   },
+
   {
     header: 'Price',
     cell: ({ row }) => {

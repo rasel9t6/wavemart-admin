@@ -18,8 +18,9 @@ export const GET = async (
     })
       .populate({
         path: 'subcategories',
-        model: 'Subcategory',
+        model: Subcategory,
       })
+      .populate('products')
       .lean(); // Use lean for better performance
 
     if (!category) {
@@ -28,6 +29,7 @@ export const GET = async (
         { status: 404 }
       );
     }
+    revalidatePath(`/categories/${params.categorySlug}`);
     return NextResponse.json(category);
   } catch (error: any) {
     console.error('[CATEGORY_GET]', error);

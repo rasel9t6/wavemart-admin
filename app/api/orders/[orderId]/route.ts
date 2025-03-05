@@ -1,31 +1,34 @@
-import Customer from '@/lib/models/Customer';
 import Order from '@/lib/models/Order';
-import Product from '@/lib/models/Product';
+import Customer from '@/lib/models/Customer';
 import { connectToDB } from '@/lib/mongoDB';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Get order by orderId
 export const GET = async (
   req: NextRequest,
-  { params }: { params: { orderId: String } }
+  { params }: { params: { orderId: string } }
 ) => {
   try {
     await connectToDB();
     const orderDetails = await Order.findById(params.orderId).populate({
       path: 'products.product',
-      model: Product,
+      model: 'Product',
     });
+
     if (!orderDetails) {
-      return new NextResponse(JSON.stringify({ message: 'Order not found' }), {
-        status: 404,
-      });
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
+
     const customer = await Customer.findOne({
       clerkId: orderDetails.customerClerkId,
     });
+
     return NextResponse.json({ orderDetails, customer }, { status: 200 });
   } catch (error) {
-    console.log('orderId_GET', error);
-    return new NextResponse('Internal Server Error', { status: 200 });
+    console.error('[orderId_GET]', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 };
-export const dynamic = 'force-dynamic';

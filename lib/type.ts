@@ -19,6 +19,7 @@ const RangeSchema = z.object({
 });
 
 export const productFormSchema = z.object({
+  sku: z.string(),
   title: z
     .string()
     .min(1, 'Title is required')
@@ -26,8 +27,7 @@ export const productFormSchema = z.object({
   slug: z.string().optional(),
   description: z
     .string()
-    .max(2000, 'Description cannot exceed 2000 characters')
-    ,
+    .max(2000, 'Description cannot exceed 2000 characters'),
   media: z.preprocess(
     (value) => {
       // If the value is a function (as returned by field.onChange), execute it to get the array
@@ -53,19 +53,24 @@ export const productFormSchema = z.object({
     .optional(),
   tags: z.array(z.string()).min(1, 'At least one tag is required'),
   sizes: z.array(z.string()).min(1, 'At least one size must be selected'),
-  colors: z.preprocess((value) => {
-    // If the value is a function (as returned by field.onChange), execute it to get the array
-    if (typeof value === 'function') {
-      try {
-        const result = value([]);
-        return Array.isArray(result) ? result : [];
-      } catch {
-        return [];
+  colors: z.preprocess(
+    (value) => {
+      // If the value is a function (as returned by field.onChange), execute it to get the array
+      if (typeof value === 'function') {
+        try {
+          const result = value([]);
+          return Array.isArray(result) ? result : [];
+        } catch {
+          return [];
+        }
       }
-    }
-    // Otherwise, return the value directly if it's already an array
-    return Array.isArray(value) ? value : [];
-  }, z.array(z.string().url('Please provide a valid URL for media')).min(1, 'At least one media item is required')),
+      // Otherwise, return the value directly if it's already an array
+      return Array.isArray(value) ? value : [];
+    },
+    z
+      .array(z.string().url('Please provide a valid URL for media'))
+      .min(1, 'At least one media item is required')
+  ),
   minimumOrderQuantity: z
     .number()
     .min(1, 'Minimum order quantity must be at least 1'),
