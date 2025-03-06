@@ -183,6 +183,7 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
     );
   }
   const handleFormSubmit = async (values: FormValues) => {
+    console.log(values);
     try {
       setIsSubmitting(true);
 
@@ -197,7 +198,7 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
       };
 
       const url = initialData
-        ? `/api/categories/${initialData._id}`
+        ? `/api/categories/${initialData.slug}`
         : '/api/categories';
 
       const response = await fetch(url, {

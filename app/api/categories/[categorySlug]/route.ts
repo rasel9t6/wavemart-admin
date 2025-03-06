@@ -69,6 +69,7 @@ export const POST = async (
     category.thumbnail = data.thumbnail;
     category.isActive = data.isActive;
     category.sortOrder = data.sortOrder;
+    category.shippingCharge = data.shippingCharge;
 
     // Handle subcategories
     if (data.subcategories && Array.isArray(data.subcategories)) {
@@ -87,6 +88,8 @@ export const POST = async (
             thumbnail: sub.thumbnail || '',
             isActive: sub.isActive ?? true,
             category: category._id,
+            sortOrder: sub.sortOrder || 0,
+            shippingCharge: sub.shippingCharge || 0,
           };
 
           // Validate subcategory data before creation

@@ -40,8 +40,8 @@ export const POST = async (req: NextRequest) => {
       );
       await Promise.all(updateCollectionPromises);
     }
-    revalidatePath('/products',);
-    revalidatePath(`/products/${product._id}`,);
+    revalidatePath('/products');
+    revalidatePath(`/products/${product._id}`);
     return NextResponse.json(product, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
@@ -91,12 +91,16 @@ export async function GET(req: NextRequest) {
     // Fetch products and populate category & subcategories
     const products = await Product.find(query)
       .populate('category', 'name')
-      .populate('subcategories', 'name')
+      .populate({
+        path: 'subcategories',
+        select: 'name',
+        model: 'Subcategory',
+      })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(); // Convert Mongoose documents to plain objects
-
+    console.log(products);
     // Convert subcategories to an array of names
     const formattedProducts = products.map((product) => ({
       ...product,
@@ -104,7 +108,7 @@ export async function GET(req: NextRequest) {
       subcategories:
         product.subcategories?.map((sub: any) => sub.name).join(', ') || 'None',
     }));
-
+    // console.log(formattedProducts);
     const total = await Product.countDocuments(query);
 
     return NextResponse.json({

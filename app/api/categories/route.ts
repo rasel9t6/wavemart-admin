@@ -15,7 +15,7 @@ export const POST = async (req: NextRequest) => {
     await connectToDB();
 
     const data = await req.json();
-
+    console.log(data);
     // Create the main category first
     const categoryData = {
       name: data.name,

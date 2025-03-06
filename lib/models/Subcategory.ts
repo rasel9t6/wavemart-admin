@@ -11,7 +11,16 @@ const subcategorySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    slug: {
+      type: String,
+      unique: true,
+      lowercase: true,
+    },
     description: String,
+    shippingCharge: {
+      byAir: { min: Number, max: Number },
+      bySea: { min: Number, max: Number },
+    },
     icon: String,
     thumbnail: String,
     products: [
@@ -24,11 +33,7 @@ const subcategorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
     },
-    slug: {
-      type: String,
-      unique: true,
-      lowercase: true,
-    },
+
     sortOrder: {
       type: Number,
       default: 0,
