@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import ImageUpload from '../custom-ui/ImageUpload';
+import ImageUpload from '../custom-ui/MediaUpload';
 import React from 'react';
 import Delete from '../custom-ui/Delete';
 import MultiText from '../custom-ui/MultiText';
@@ -62,7 +62,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       currentRanges.filter((_, idx) => idx !== index)
     );
   };
-
 
   return (
     <div className="p-10">

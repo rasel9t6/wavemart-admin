@@ -7,8 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import ImageUpload from '../custom-ui/ImageUpload';
 import Delete from '../custom-ui/Delete';
+import MediaUpload from '../custom-ui/MediaUpload';
 
 // Types matching MongoDB Schema
 type Subcategory = {
@@ -381,34 +381,44 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {/* Icon Upload */}
               <div className="mb-4">
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Icon
                 </label>
-                <ImageUpload
-                  value={form.watch('icon') ? [form.watch('icon')] : []}
+                <MediaUpload
+                  value={
+                    form.watch('icon')
+                      ? [{ url: form.watch('icon'), type: 'image' }]
+                      : []
+                  }
                   onChange={(url) => form.setValue('icon', url)}
                   onRemove={() => form.setValue('icon', '')}
+                  folderId="icons"
                 />
-                {form.formState.errors.icon && (
+                {form.formState.errors?.icon && (
                   <p className="mt-1 text-sm text-red-600">
                     {form.formState.errors.icon.message}
                   </p>
                 )}
               </div>
 
+              {/* Thumbnail Upload */}
               <div className="mb-4">
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Thumbnail
                 </label>
-                <ImageUpload
+                <MediaUpload
                   value={
-                    form.watch('thumbnail') ? [form.watch('thumbnail')] : []
+                    form.watch('thumbnail')
+                      ? [{ url: form.watch('thumbnail'), type: 'image' }]
+                      : []
                   }
                   onChange={(url) => form.setValue('thumbnail', url)}
                   onRemove={() => form.setValue('thumbnail', '')}
+                  folderId="thumbnails"
                 />
-                {form.formState.errors.thumbnail && (
+                {form.formState.errors?.thumbnail && (
                   <p className="mt-1 text-sm text-red-600">
                     {form.formState.errors.thumbnail.message}
                   </p>
@@ -529,6 +539,90 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
                           placeholder="Describe your subcategory..."
                           className="min-h-[120px] w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                      </div>
+
+                      {/* Media Upload Section for Icon and Thumbnail */}
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        {/* Icon Upload */}
+                        <div className="mb-4">
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Icon
+                          </label>
+                          <MediaUpload
+                            value={
+                              form.watch(`subcategories.${index}.icon`)
+                                ? [
+                                    {
+                                      url:
+                                        form.watch(
+                                          `subcategories.${index}.icon`
+                                        ) || '',
+                                      type: 'image',
+                                    },
+                                  ]
+                                : []
+                            }
+                            onChange={(url) =>
+                              form.setValue(`subcategories.${index}.icon`, url)
+                            }
+                            onRemove={() =>
+                              form.setValue(`subcategories.${index}.icon`, '')
+                            }
+                            folderId="icons"
+                          />
+                          {form.formState.errors?.subcategories?.[index]
+                            ?.icon && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {
+                                form.formState.errors.subcategories[index].icon
+                                  .message
+                              }
+                            </p>
+                          )}
+                        </div>
+                        {/* Thumbnail Upload */}
+                        <div className="mb-4">
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Thumbnail
+                          </label>
+                          <MediaUpload
+                            value={
+                              form.watch(`subcategories.${index}.thumbnail`)
+                                ? [
+                                    {
+                                      url:
+                                        form.watch(
+                                          `subcategories.${index}.thumbnail`
+                                        ) || '',
+                                      type: 'image',
+                                    },
+                                  ]
+                                : []
+                            }
+                            onChange={(url) =>
+                              form.setValue(
+                                `subcategories.${index}.thumbnail`,
+                                url
+                              )
+                            }
+                            onRemove={() =>
+                              form.setValue(
+                                `subcategories.${index}.thumbnail`,
+                                ''
+                              )
+                            }
+                            folderId="thumbnails"
+                          />
+                          {form.formState.errors?.subcategories?.[index]
+                            ?.thumbnail && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {
+                                form.formState.errors.subcategories[index]
+                                  .thumbnail.message
+                              }
+                            </p>
+                          )}
+                        </div>
                       </div>
 
                       {/* Shipping Charge Section for Subcategory */}
