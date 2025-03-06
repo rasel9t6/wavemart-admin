@@ -11,7 +11,7 @@ export default async function ProductPage() {
   if (!res.ok) throw new Error('Failed to fetch products');
 
   const { products } = await res.json();
-
+  console.log('admin', products);
   return (
     <div className="px-10 py-5">
       <div className="flex items-center justify-between">

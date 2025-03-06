@@ -202,7 +202,7 @@ ProductSchema.post('save', async function (doc) {
 ProductSchema.pre('save', function (next) {
   try {
     // Slug generation
-    if (this.isModified('title')) {
+    if (this.isModified('title') && !this.isNew) {
       this.slug = slugify(this.title, { lower: true, strict: true });
     }
 

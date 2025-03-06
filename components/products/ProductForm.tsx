@@ -20,13 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import ImageUpload from '../custom-ui/MediaUpload';
 import React from 'react';
 import Delete from '../custom-ui/Delete';
 import MultiText from '../custom-ui/MultiText';
 import MultiSelect from '../custom-ui/MultiSelect';
 import { ProductType } from '@/lib/types';
 import { useProductForm } from '@/hooks/useProductForm';
+import MediaUpload from '../custom-ui/MediaUpload';
 
 interface ProductFormProps {
   initialData?: ProductType | null | undefined;
@@ -137,16 +137,21 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               <FormItem>
                 <FormLabel>Images</FormLabel>
                 <FormControl>
-                  <ImageUpload
-                    value={field.value || []}
-                    onChange={(url) =>
-                      field.onChange((prev: string[] = []) => [...prev, url])
-                    }
-                    onRemove={(url) =>
-                      field.onChange((prev: string[] = []) =>
-                        prev.filter((image) => image !== url)
-                      )
-                    }
+                  <MediaUpload
+                    value={(field.value || []).map((url) => ({
+                      url,
+                      type: 'image',
+                    }))}
+                    onChange={(url) => {
+                      const updatedImages = [...(field.value || []), url];
+                      field.onChange(updatedImages);
+                    }}
+                    onRemove={(url) => {
+                      const updatedImages = (field.value || []).filter(
+                        (image) => image !== url
+                      );
+                      field.onChange(updatedImages);
+                    }}
                   />
                 </FormControl>
                 <FormMessage className="text-red-1" />
@@ -564,18 +569,23 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               name="colors"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Colors Images</FormLabel>
+                  <FormLabel>Images</FormLabel>
                   <FormControl>
-                    <ImageUpload
-                      value={field.value || []}
-                      onChange={(url) =>
-                        field.onChange((prev: string[] = []) => [...prev, url])
-                      }
-                      onRemove={(url) =>
-                        field.onChange((prev: string[] = []) =>
-                          prev.filter((image) => image !== url)
-                        )
-                      }
+                    <MediaUpload
+                      value={(field.value || []).map((url) => ({
+                        url,
+                        type: 'image',
+                      }))}
+                      onChange={(url) => {
+                        const updatedImages = [...(field.value || []), url];
+                        field.onChange(updatedImages);
+                      }}
+                      onRemove={(url) => {
+                        const updatedImages = (field.value || []).filter(
+                          (image) => image !== url
+                        );
+                        field.onChange(updatedImages);
+                      }}
                     />
                   </FormControl>
                   <FormMessage className="text-red-1" />

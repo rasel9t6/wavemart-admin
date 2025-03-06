@@ -12,7 +12,7 @@ import slugify from 'slugify';
 const getDefaultValues = (initialData?: ProductType): ProductFormValues => ({
   sku: initialData?.sku || '',
   title: initialData?.title || '',
-  slug: initialData?.slug || '',
+  slug: initialData?.slug || '', // ✅ Keep slug unchanged on edit
   description: initialData?.description || '',
   media: initialData?.media || [],
   category:
@@ -56,9 +56,16 @@ export const useProductForm = (initialData?: ProductType) => {
 
   const { watch, setValue } = form;
 
-  // Watch title for slug generation
+  // Watch title for slug generation but only create a slug for new products
   const title = watch('title');
 
+  useEffect(() => {
+    if (!initialData) {
+      setValue('slug', slugify(title, { lower: true, strict: true }));
+    }
+  }, [title, setValue, initialData]);
+
+  // Fetch categories
   useEffect(() => {
     const fetchCollections = async () => {
       try {
@@ -73,24 +80,22 @@ export const useProductForm = (initialData?: ProductType) => {
     fetchCollections();
   }, []);
 
-  // Auto-generate slug from title
-  useEffect(() => {
-    if (title) {
-      setValue('slug', slugify(title, { lower: true, strict: true }));
-    }
-  }, [title, setValue]);
-
   const onSubmit = async (values: ProductFormValues) => {
     try {
       setLoading(true);
 
-      // Deep clean the values to remove any undefined or null
-      const cleanedValues = JSON.parse(JSON.stringify(values));
+      // ✅ Deep clean the values but allow `null` fields for updates
+      const cleanedValues = JSON.parse(
+        JSON.stringify(values, (key, value) =>
+          value === undefined ? null : value
+        )
+      );
 
+      // ✅ If editing, use PATCH & `_id`, otherwise use POST
       const url = initialData
-        ? `/api/products/${initialData.slug}`
+        ? `/api/products/${initialData._id}` // Use `_id` instead of slug
         : '/api/products';
-      const method = 'POST';
+      const method = initialData ? 'PATCH' : 'POST';
 
       console.log('Submitting product data:', cleanedValues);
 
@@ -103,7 +108,6 @@ export const useProductForm = (initialData?: ProductType) => {
       const data = await res.json();
 
       if (!res.ok) {
-        // Log more detailed error information
         console.error('Server error response:', {
           status: res.status,
           body: data,
@@ -119,7 +123,6 @@ export const useProductForm = (initialData?: ProductType) => {
     } catch (err) {
       console.error('[PRODUCT_SUBMIT]', err);
 
-      // More specific error handling
       if (err instanceof Error) {
         toast.error(err.message);
       } else if (typeof err === 'object' && err !== null) {

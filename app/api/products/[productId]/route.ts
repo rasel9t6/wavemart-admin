@@ -124,6 +124,48 @@ export const POST = async (req: NextRequest) => {
     return handleError('Internal Server Error', 500);
   }
 };
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { productId: string } }
+) {
+  try {
+    const { userId } = auth();
+    if (!userId) {
+      return handleError('Unauthorized', 401);
+    }
+
+    await connectToDB();
+    const body = await req.json();
+
+    // Check if the product exists
+    const existingProduct = await Product.findById(params.productId);
+    if (!existingProduct) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    // Prevent updating the slug
+    delete body.slug; // ✅ Ensure slug is not modified
+
+    // Ensure subcategories are valid ObjectIds
+    if (body.subcategories) {
+      body.subcategories = body.subcategories.map(
+        (id: any) => new mongoose.Types.ObjectId(id)
+      );
+    }
+
+    // Update product (excluding slug)
+    const updatedProduct = await Product.findByIdAndUpdate(
+      params.productId,
+      body,
+      { new: true, runValidators: true, upsert: false } // ✅ Prevent accidental insert
+    );
+
+    return NextResponse.json(updatedProduct);
+  } catch (error) {
+    console.error('❌ Error updating product:', error);
+    return handleError('Internal Server Error', 500);
+  }
+}
 
 export const DELETE = async (
   req: NextRequest,

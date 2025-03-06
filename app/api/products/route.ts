@@ -91,16 +91,11 @@ export async function GET(req: NextRequest) {
     // Fetch products and populate category & subcategories
     const products = await Product.find(query)
       .populate('category', 'name')
-      .populate({
-        path: 'subcategories',
-        select: 'name',
-        model: 'Subcategory',
-      })
+      .populate('subcategories')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(); // Convert Mongoose documents to plain objects
-    console.log(products);
     // Convert subcategories to an array of names
     const formattedProducts = products.map((product) => ({
       ...product,
@@ -108,7 +103,7 @@ export async function GET(req: NextRequest) {
       subcategories:
         product.subcategories?.map((sub: any) => sub.name).join(', ') || 'None',
     }));
-    // console.log(formattedProducts);
+    console.log('[PRODUCTS_GET]', formattedProducts);
     const total = await Product.countDocuments(query);
 
     return NextResponse.json({
