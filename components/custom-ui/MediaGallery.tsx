@@ -31,11 +31,15 @@ const MediaGallery: FC<MediaGalleryProps> = ({
   if (!visible) return null;
 
   const handleSelection = (item: { url: string; type: 'image' | 'video' }) => {
+    console.log('Item URL', item.url);
     if (onSelect) onSelect(item.url, item.type);
     onClose();
   };
 
   const handleUpload = async (files: File[]) => {
+    console.log('Files received:', files);
+    console.log('Type of files:', Object.prototype.toString.call(files));
+
     try {
       await uploadMedia(files, folderId);
     } catch (error) {

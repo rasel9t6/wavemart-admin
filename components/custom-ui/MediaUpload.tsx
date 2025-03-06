@@ -21,7 +21,7 @@ const MediaUpload: FC<MediaUploadProps> = ({
   folderId = 'uploads',
 }) => {
   const [galleryOpen, setGalleryOpen] = useState(false);
-
+  console.log(value);
   return (
     <div>
       <div className="mb-4 flex flex-wrap gap-4">

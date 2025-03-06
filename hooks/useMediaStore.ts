@@ -24,13 +24,21 @@ export const useMediaStore = create<MediaStore>((set, get) => ({
 
   // Upload multiple files (images and videos)
   uploadMedia: async (files, folder) => {
+    console.log('Original files:', files);
+    const filesArray = (Array.isArray(files) ? files : Array.from(files)) as File[];
+    console.log('Converted filesArray:', filesArray);
+
+    if (!filesArray.length) {
+      console.error('No files to upload.');
+      return [];
+    }
     try {
       set({ loading: true });
-      const uploadPromises = files.map(async (file) => {
+      const uploadPromises = filesArray.map(async (file: File) => {
         const formData = new FormData();
         formData.append('file', file);
         const result = await uploadFile(formData, folder);
-
+        console.log(result);
         if (result) {
           // Determine media type
           const type = file.type.startsWith('image') ? 'image' : 'video';
