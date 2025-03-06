@@ -29,12 +29,12 @@ export default function MultiSelect({
   const [open, setOpen] = useState(false);
 
   let selected: any;
-
+  console.log(categories);
   if (value.length === 0) {
     selected = [];
   } else {
     selected = value.map((id) =>
-      categories.find((collection:any) => collection._id === id)
+      categories.find((collection: any) => collection._id === id)
     );
   }
 
@@ -70,7 +70,7 @@ export default function MultiSelect({
       <div className="relative mt-2">
         {open && (
           <CommandGroup className="absolute top-0 z-30 w-full overflow-auto rounded-md border border-gray-1/25 bg-white shadow-md">
-            {selectable.map((collection:any) => (
+            {selectable.map((collection: any) => (
               <CommandItem
                 key={collection._id}
                 onMouseDown={(e) => e.preventDefault()}

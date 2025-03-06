@@ -30,33 +30,15 @@ export async function GET(
 
     // Find product and populate category and subcategories
     const product = (await Product.findById(params.productId)
-      .populate('category', 'name')
-      .populate('subcategories', 'name')
+      .populate('category') // ✅ Ensure category is populated
+      .populate('subcategories') // ✅ Ensure subcategories are populated
       .lean()) as ProductDocument;
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
-
-    // Ensure the response is properly structured
-    const response = {
-      ...product,
-      category: product.category?.name || 'Unknown', // Ensure category is a string
-      subcategories: product.subcategories
-        ? product.subcategories.map((sub) => sub.name).join(', ')
-        : 'None', // Convert array of subcategories to a string
-      quantityPricing: product.quantityPricing || [],
-      price: product.price || {},
-      expense: product.expense || {},
-      currencyRates: product.currencyRates || {},
-      media: product.media || [],
-      tags: product.tags || [],
-      sizes: product.sizes || [],
-      colors: product.colors || [],
-    };
-
     revalidatePath(`/products/${params.productId}`);
-    return NextResponse.json(response);
+    return NextResponse.json(product);
   } catch (error: any) {
     console.error('Product fetch error:', error);
     return NextResponse.json(

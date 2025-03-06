@@ -520,17 +520,23 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                             (c) => c._id === form.watch('category')
                           )?.subcategories || []
                         }
-                        value={field.value || []}
+                        value={Array.isArray(field.value) ? field.value : []} // ✅ Ensure it's always an array
                         onChange={(_id) =>
-                          field.onChange([...(field.value || []), _id])
+                          field.onChange([
+                            ...(Array.isArray(field.value) ? field.value : []),
+                            _id,
+                          ])
                         }
                         onRemove={(idToRemove) =>
-                          field.onChange([
-                            ...(field.value || []).filter(
+                          field.onChange(
+                            (Array.isArray(field.value)
+                              ? field.value
+                              : []
+                            ).filter(
                               (subcategoryId: string) =>
                                 subcategoryId !== idToRemove
-                            ),
-                          ])
+                            )
+                          )
                         }
                       />
                     </FormControl>

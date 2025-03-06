@@ -90,24 +90,18 @@ export async function GET(req: NextRequest) {
 
     // Fetch products and populate category & subcategories
     const products = await Product.find(query)
-      .populate('category', 'name')
+      .populate('category')
       .populate('subcategories')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean(); // Convert Mongoose documents to plain objects
-    // Convert subcategories to an array of names
-    const formattedProducts = products.map((product) => ({
-      ...product,
-      category: product.category?.name || 'Unknown',
-      subcategories:
-        product.subcategories?.map((sub: any) => sub.name).join(', ') || 'None',
-    }));
-    console.log('[PRODUCTS_GET]', formattedProducts);
+      .lean();
+
+    console.log('[PRODUCTS_GET]', products);
     const total = await Product.countDocuments(query);
 
     return NextResponse.json({
-      products: formattedProducts,
+      products,
       pagination: {
         total,
         page,
