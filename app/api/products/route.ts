@@ -1,5 +1,6 @@
-import Collection from '@/lib/models/Category';
+import Category from '@/lib/models/Category';
 import Product from '@/lib/models/Product';
+import Subcategory from '@/lib/models/Subcategory';
 import { connectToDB } from '@/lib/mongoDB';
 import { auth } from '@clerk/nextjs/server';
 import mongoose from 'mongoose';
@@ -28,17 +29,17 @@ export const POST = async (req: NextRequest) => {
     await product.save();
 
     // Update collections if provided
-    if (body.collections?.length) {
-      const updateCollectionPromises = body.collections.map(
-        async (collectionId: string) => {
-          const collection = await Collection.findById(collectionId);
-          if (collection) {
-            collection.products.push(product._id);
-            await collection.save();
+    if (body.categories?.length) {
+      const updateCategoryPromises = body.categories.map(
+        async (categoryId: string) => {
+          const category = await Category.findOne({ slug: categoryId });
+          if (category) {
+            category.products.push(product._id);
+            await category.save();
           }
         }
       );
-      await Promise.all(updateCollectionPromises);
+      await Promise.all(updateCategoryPromises);
     }
     revalidatePath('/products');
     revalidatePath(`/products/${product._id}`);
@@ -64,7 +65,6 @@ export async function GET(req: NextRequest) {
 
     // Filtering parameters
     const category = searchParams.get('category');
-    const subcategory = searchParams.get('subcategory');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const tags = searchParams.get('tags')?.split(',');
@@ -72,10 +72,13 @@ export async function GET(req: NextRequest) {
 
     // Build query
     const query: any = {};
-    if (category) query.category = new mongoose.Types.ObjectId(category);
-    if (subcategory)
-      query.subcategories = new mongoose.Types.ObjectId(subcategory);
-    if (tags) query.tags = { $in: tags };
+    if (category) {
+      // Assuming category is an ObjectId
+      query.category = new mongoose.Types.ObjectId(category);
+    }
+    if (tags) {
+      query.tags = { $in: tags };
+    }
     if (minPrice || maxPrice) {
       query['price.cny'] = {};
       if (minPrice) query['price.cny'].$gte = parseFloat(minPrice);
@@ -88,16 +91,23 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Fetch products and populate category & subcategories
+    console.log('Query:', query); // Log the query for debugging
+
+    // Fetch products and populate category and its subcategories
     const products = await Product.find(query)
-      .populate('category')
-      .populate('subcategories')
+      .populate({
+        path: 'category',
+        model: Category,
+        populate: {
+          path: 'subcategories', 
+          model: Subcategory, 
+        },
+      })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    console.log('[PRODUCTS_GET]', products);
     const total = await Product.countDocuments(query);
 
     return NextResponse.json({
@@ -110,7 +120,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('[PRODUCTS_GET]', error);
+    console.error('[PRODUCTS_GET]', error.message || error);
     return NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }

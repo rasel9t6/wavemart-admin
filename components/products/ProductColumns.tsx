@@ -10,7 +10,10 @@ export const columns: ColumnDef<ProductType>[] = [
     accessorKey: 'title',
     header: 'Title',
     cell: ({ row }) => (
-      <Link href={`/products/${row.original._id}`} className="hover:text-red-1">
+      <Link
+        href={`/products/${row.original.slug}`}
+        className="hover:text-red-1"
+      >
         {row.original.title}
       </Link>
     ),
@@ -19,13 +22,13 @@ export const columns: ColumnDef<ProductType>[] = [
     accessorKey: 'category.name',
     header: 'Category',
     cell: ({ row }) => {
-      const category =
-        typeof row.original.category === 'object'
-          ? row.original.category?.name
-          : row.original.category || 'N/A';
+      const category = row.original.category?.name || 'N/A';
 
-      const subcategories = Array.isArray(row.original.subcategories) // ✅ Ensure it's an array
-        ? row.original.subcategories.map((sub: any) => sub.name).join(', ')
+      // Ensure that category.subcategories is an array before mapping
+      const subcategories = Array.isArray(row.original.category?.subcategories)
+        ? row.original.category.subcategories
+            .map((sub: any) => sub.name)
+            .join(', ')
         : 'N/A';
 
       return (
@@ -40,7 +43,6 @@ export const columns: ColumnDef<ProductType>[] = [
       );
     },
   },
-
   {
     header: 'Price',
     cell: ({ row }) => {

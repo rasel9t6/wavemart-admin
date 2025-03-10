@@ -9,28 +9,67 @@ import mongoose from 'mongoose';
 
 export const GET = async (
   req: NextRequest,
-  { params }: { params: { categorySlug: string } }
+  { params }: { params: { categorySlug: string[] } }
 ) => {
   try {
     await connectToDB();
-    const category = await Category.findOne({
-      slug: params.categorySlug,
-    })
-      .populate({
-        path: 'subcategories',
-        model: Subcategory,
-      })
-      .populate('products')
-      .lean(); // Use lean for better performance
+    const slugPath = params.categorySlug;
 
-    if (!category) {
-      return NextResponse.json(
-        { error: 'Category not found' },
-        { status: 404 }
-      );
+    // If it's a top-level category
+    if (slugPath.length === 1) {
+      const category = await Category.findOne({
+        slug: slugPath[0],
+      })
+        .populate({
+          path: 'subcategories',
+          model: Subcategory,
+        })
+        .populate('products')
+        .lean();
+
+      if (!category) {
+        return NextResponse.json(
+          { error: 'Category not found' },
+          { status: 404 }
+        );
+      }
+
+      revalidatePath(`/categories/${slugPath[0]}`);
+      return NextResponse.json(category);
     }
-    revalidatePath(`/categories/${params.categorySlug}`);
-    return NextResponse.json(category);
+    // If it's a subcategory
+    else if (slugPath.length === 2) {
+      const parentCategory = await Category.findOne({ slug: slugPath[0] });
+
+      if (!parentCategory) {
+        return NextResponse.json(
+          { error: 'Parent category not found' },
+          { status: 404 }
+        );
+      }
+
+      const subcategory = await Subcategory.findOne({
+        category: parentCategory._id,
+        slug: slugPath[1],
+      })
+        .populate('products')
+        .lean();
+
+      if (!subcategory) {
+        return NextResponse.json(
+          { error: 'Subcategory not found' },
+          { status: 404 }
+        );
+      }
+
+      revalidatePath(`/categories/${slugPath[0]}/${slugPath[1]}`);
+      return NextResponse.json(subcategory);
+    }
+
+    return NextResponse.json(
+      { error: 'Invalid category path' },
+      { status: 400 }
+    );
   } catch (error: any) {
     console.error('[CATEGORY_GET]', error);
     return NextResponse.json(
@@ -42,7 +81,7 @@ export const GET = async (
 
 export const POST = async (
   req: NextRequest,
-  { params }: { params: { categorySlug: string } }
+  { params }: { params: { categorySlug: string[] } }
 ) => {
   try {
     const { userId } = auth();
@@ -52,7 +91,17 @@ export const POST = async (
 
     await connectToDB();
     const data = await req.json();
-    const category = await Category.findOne({ slug: params.categorySlug });
+    const slugPath = params.categorySlug;
+
+    // We only support updating top-level categories via this endpoint
+    if (slugPath.length !== 1) {
+      return NextResponse.json(
+        { error: 'Invalid category path for update' },
+        { status: 400 }
+      );
+    }
+
+    const category = await Category.findOne({ slug: slugPath[0] });
 
     if (!category) {
       return NextResponse.json(
@@ -112,6 +161,7 @@ export const POST = async (
 
     // Revalidate the categories path
     revalidatePath('/categories');
+    revalidatePath(`/categories/${slugPath[0]}`);
 
     return NextResponse.json(category);
   } catch (error: any) {
@@ -128,7 +178,7 @@ export const POST = async (
 
 export const DELETE = async (
   req: NextRequest,
-  { params }: { params: { categorySlug: string } }
+  { params }: { params: { categorySlug: string[] } }
 ) => {
   try {
     const { userId } = auth();
@@ -137,7 +187,17 @@ export const DELETE = async (
     }
 
     await connectToDB();
-    const category = await Category.findOne({ slug: params.categorySlug });
+    const slugPath = params.categorySlug;
+
+    // We only support deleting top-level categories via this endpoint
+    if (slugPath.length !== 1) {
+      return NextResponse.json(
+        { error: 'Invalid category path for deletion' },
+        { status: 400 }
+      );
+    }
+
+    const category = await Category.findOne({ slug: slugPath[0] });
 
     if (!category) {
       return new NextResponse('Category not found', { status: 404 });

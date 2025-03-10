@@ -8,7 +8,7 @@ export default async function CollectionPage() {
   const collections = await fetch(
     `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/categories`
   ).then((res) => res.json());
-  console.log(collections);
+
   return (
     <div className="px-10 py-5">
       <div className="flex items-center justify-between">

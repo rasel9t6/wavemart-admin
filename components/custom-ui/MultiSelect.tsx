@@ -9,7 +9,6 @@ import {
 import { useState } from 'react';
 import { Badge } from '../ui/badge';
 import { X } from 'lucide-react';
-
 interface MultiSelectProps {
   placeholder: string;
   categories: string[];
@@ -29,7 +28,6 @@ export default function MultiSelect({
   const [open, setOpen] = useState(false);
 
   let selected: any;
-  console.log(categories);
   if (value.length === 0) {
     selected = [];
   } else {

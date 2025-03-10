@@ -1,4 +1,4 @@
-// lib/models/Subcategory.ts
+
 import mongoose from 'mongoose';
 
 const subcategorySchema = new mongoose.Schema(

@@ -12,13 +12,10 @@ import slugify from 'slugify';
 const getDefaultValues = (initialData?: ProductType): ProductFormValues => ({
   sku: initialData?.sku || '',
   title: initialData?.title || '',
-  slug: initialData?.slug || '', // ✅ Keep slug unchanged on edit
+  slug: initialData?.slug || '', // Keep slug unchanged on edit
   description: initialData?.description || '',
   media: initialData?.media || [],
-  category:
-    typeof initialData?.category === 'object'
-      ? initialData?.category.name
-      : initialData?.category || '',
+  category: initialData?.category?.name || initialData?.category || '',
   subcategories: initialData?.subcategories || [],
   tags: initialData?.tags || [],
   sizes: initialData?.sizes || [],
@@ -47,7 +44,7 @@ const getDefaultValues = (initialData?: ProductType): ProductFormValues => ({
 export const useProductForm = (initialData?: ProductType) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [collections, setCollections] = useState<CollectionType[]>([]);
+  const [categories, setCollections] = useState<CollectionType[]>([]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -55,8 +52,6 @@ export const useProductForm = (initialData?: ProductType) => {
   });
 
   const { watch, setValue } = form;
-
-  // Watch title for slug generation but only create a slug for new products
   const title = watch('title');
 
   useEffect(() => {
@@ -65,11 +60,11 @@ export const useProductForm = (initialData?: ProductType) => {
     }
   }, [title, setValue, initialData]);
 
-  // Fetch categories
   useEffect(() => {
     const fetchCollections = async () => {
       try {
         const res = await fetch('/api/categories');
+        if (!res.ok) throw new Error('Failed to fetch categories');
         const data = await res.json();
         setCollections(data);
       } catch (err) {
@@ -77,27 +72,26 @@ export const useProductForm = (initialData?: ProductType) => {
         toast.error('Failed to load collections');
       }
     };
-    fetchCollections();
-  }, []);
+
+    // Fetch categories only if they haven't been loaded yet
+    if (categories.length === 0) {
+      fetchCollections();
+    }
+  }, [categories.length]);
 
   const onSubmit = async (values: ProductFormValues) => {
     try {
       setLoading(true);
-
-      // ✅ Deep clean the values but allow `null` fields for updates
       const cleanedValues = JSON.parse(
         JSON.stringify(values, (key, value) =>
           value === undefined ? null : value
         )
       );
 
-      // ✅ If editing, use PATCH & `_id`, otherwise use POST
       const url = initialData
-        ? `/api/products/${initialData._id}` // Use `_id` instead of slug
+        ? `/api/products/${initialData._id}`
         : '/api/products';
       const method = initialData ? 'PATCH' : 'POST';
-
-      console.log('Submitting product data:', cleanedValues);
 
       const res = await fetch(url, {
         method,
@@ -105,13 +99,8 @@ export const useProductForm = (initialData?: ProductType) => {
         body: JSON.stringify(cleanedValues),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        console.error('Server error response:', {
-          status: res.status,
-          body: data,
-        });
+        const data = await res.json();
         throw new Error(data.error || data.message || 'Failed to save product');
       }
 
@@ -122,14 +111,7 @@ export const useProductForm = (initialData?: ProductType) => {
       router.refresh();
     } catch (err) {
       console.error('[PRODUCT_SUBMIT]', err);
-
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else if (typeof err === 'object' && err !== null) {
-        toast.error(JSON.stringify(err));
-      } else {
-        toast.error('Something went wrong');
-      }
+      toast.error(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -138,7 +120,7 @@ export const useProductForm = (initialData?: ProductType) => {
   return {
     form,
     loading,
-    collections,
+    categories,
     onSubmit,
     handleKeyPress: (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') e.preventDefault();
