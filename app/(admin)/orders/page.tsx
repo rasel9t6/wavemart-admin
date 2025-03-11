@@ -6,22 +6,34 @@ export default async function OrdersPage() {
   let orders = [];
 
   try {
+    if (!process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL) {
+      throw new Error('E-commerce admin URL is not configured');
+    }
+
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/orders`,
+      `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/orders`,
       {
         cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
       }
     );
 
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Response error:', errorText);
       throw new Error(
         `Error fetching orders: ${res.status} - ${res.statusText}`
       );
     }
 
-    orders = await res.json();
+    const data = await res.json();
+    orders = Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('[orders_GET]', error);
+    // You might want to handle the error UI here
   }
 
   return (

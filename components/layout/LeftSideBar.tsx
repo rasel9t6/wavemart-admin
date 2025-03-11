@@ -2,9 +2,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserButton } from '@clerk/nextjs';
+
 
 import { navLinks } from '@/lib/constant';
+import { UserButton } from '../auth/user-button';
 
 export default function LeftSideBar() {
   const pathname = usePathname();
