@@ -59,8 +59,19 @@ export const POST = async (req: NextRequest) => {
   }
 };
 
-export const GET = async () => {
+export const GET = async (req: NextRequest, res: NextResponse) => {
   try {
+    // Check API key
+    const apiKey = req.headers.get('x-api-key');
+
+    // Validate API key
+    if (!apiKey || apiKey !== process.env.STORE_API_KEY) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    // Allow CORS from your store domain
+    const corsHeaders = cors(req, res);
+
     await connectToDB();
     const categories = await Category.find()
       .populate({
@@ -70,7 +81,8 @@ export const GET = async () => {
       .sort({ sortOrder: 1 })
       .lean();
 
-    return NextResponse.json(categories);
+    // Return response with CORS headers
+    return NextResponse.json(categories, corsHeaders);
   } catch (error: any) {
     console.error('[Categories_GET]', error);
     return NextResponse.json(

@@ -2,8 +2,14 @@ import Order from '@/lib/models/Order';
 import Customer from '@/lib/models/Customer';
 import { connectToDB } from '@/lib/mongoDB';
 import { NextRequest, NextResponse } from 'next/server';
+import cors from '@/lib/cros';
 
-// 🔹 Fetch all orders (Admin View)
+export async function OPTIONS(req: NextRequest) {
+  // Return 204 No Content for preflight
+  const res = new NextResponse(null, { status: 204 });
+  return cors(req, res);
+}
+// Fetch all orders
 export const GET = async (req: NextRequest) => {
   try {
     await connectToDB();
@@ -45,21 +51,23 @@ export const POST = async (req: NextRequest) => {
       totalDiscount,
     } = await req.json();
 
-    // ✅ Validate required fields
-    if (!customerClerkId || !products?.length || !totalAmount) {
-      return NextResponse.json(
+    // Validate required fields
+    if (!userId || !products?.length || !totalAmount) {
+      const res = NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
+      return cors(req, res);
     }
 
     // ✅ Ensure customer exists
     const customer = await Customer.findOne({ clerkId: customerClerkId });
     if (!customer) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: 'Customer not found' },
         { status: 404 }
       );
+      return cors(req, res);
     }
 
     // ✅ Create order with initial tracking history
@@ -87,15 +95,17 @@ export const POST = async (req: NextRequest) => {
       { $push: { orders: newOrder._id } }
     );
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       { success: true, order: newOrder },
       { status: 201 }
     );
+    return cors(req, res);
   } catch (error) {
-    console.error('[orders_POST] API Error:', error);
-    return NextResponse.json(
+    console.error('[orders_POST]', error);
+    const res = NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
     );
+    return cors(req, res);
   }
 };
