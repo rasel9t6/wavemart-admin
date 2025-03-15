@@ -3,61 +3,58 @@ import Customer from '@/lib/models/Customer';
 import { connectToDB } from '@/lib/mongoDB';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Fetch all orders
+// 🔹 Fetch all orders (Admin View)
 export const GET = async (req: NextRequest) => {
   try {
     await connectToDB();
 
     const orders = await Order.find()
+      .populate('products.product') // ✅ Ensure product data is populated
       .populate({
-        path: 'products.product',
-        model: 'Product',
-      })
-      .populate({
-        path: 'userId',
+        path: 'customerClerkId',
         model: 'Customer',
         select: 'name email phone',
+        // ✅ Fetch only necessary fields
       })
       .sort({ createdAt: -1 });
 
+    if (!orders.length) {
+      return NextResponse.json([], { status: 200 }); // ✅ Return empty array, not undefined
+    }
+
     return NextResponse.json(orders, { status: 200 });
   } catch (error) {
-    console.error('[orders_GET]', error);
+    console.error('[orders_GET] API Error:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
 };
-
-// Create a new order
+// 🔹 Create a new order (called from Store Project)
 export const POST = async (req: NextRequest) => {
   try {
     await connectToDB();
     const {
-      userId,
-      customerInfo,
+      customerClerkId,
       products,
-      shippingAddress,
       shippingMethod,
       deliveryType,
-      paymentMethod,
-      subtotal,
-      shippingRate,
-      totalDiscount = 0,
+      shippingAddress,
       totalAmount,
+      totalDiscount,
     } = await req.json();
 
-    // Validate required fields
-    if (!userId || !products?.length || !totalAmount) {
+    // ✅ Validate required fields
+    if (!customerClerkId || !products?.length || !totalAmount) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Check if customer exists
-    const customer = await Customer.findOne({ userId });
+    // ✅ Ensure customer exists
+    const customer = await Customer.findOne({ clerkId: customerClerkId });
     if (!customer) {
       return NextResponse.json(
         { error: 'Customer not found' },
@@ -65,38 +62,29 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    // Create order with initial tracking history
+    // ✅ Create order with initial tracking history
     const newOrder = await Order.create({
-      userId,
-      customerInfo,
+      customerClerkId,
       products,
-      shippingAddress,
       shippingMethod,
       deliveryType,
-      paymentMethod,
-      subtotal,
-      shippingRate,
-      totalDiscount,
+      shippingAddress,
       totalAmount,
+      totalDiscount,
       status: 'pending',
-      paymentStatus: 'pending',
       trackingHistory: [
         {
           status: 'pending',
           timestamp: new Date(),
           location: 'Order Received',
-          notes: 'Order placed successfully',
         },
       ],
     });
 
-    // Update customer's order stats
+    // ✅ Link order to customer
     await Customer.findOneAndUpdate(
-      { userId },
-      {
-        $push: { orders: newOrder._id },
-        $inc: { totalOrders: 1, totalSpent: totalAmount },
-      }
+      { clerkId: customerClerkId },
+      { $push: { orders: newOrder._id } }
     );
 
     return NextResponse.json(
@@ -104,7 +92,7 @@ export const POST = async (req: NextRequest) => {
       { status: 201 }
     );
   } catch (error) {
-    console.error('[orders_POST]', error);
+    console.error('[orders_POST] API Error:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

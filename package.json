@@ -9,8 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "create-super-admin": "node scripts/create-super-admin.js",
-    "dbtest": "node scripts/dbtest.js"
+    "create-super-admin": "node scripts/create-super-admin.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.1.4",

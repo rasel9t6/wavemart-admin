@@ -10,7 +10,7 @@ interface CategoryParams {
 const CategoryService = {
   async getCategoryBySlug(slug: string) {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_ADMIN_URL;
+      const baseUrl = process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL;
       const response = await fetch(`${baseUrl}/api/categories/${slug}`);
       if (!response.ok) return null;
       return response.json();

@@ -5,7 +5,9 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 
 export default async function ProductPage() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_URL}/api/products`);
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/products`
+  );
   if (!res.ok) throw new Error('Failed to fetch products');
 
   const { products } = await res.json();

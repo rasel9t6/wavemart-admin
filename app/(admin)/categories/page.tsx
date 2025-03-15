@@ -6,7 +6,7 @@ import { FaPlus } from 'react-icons/fa6';
 
 export default async function CollectionPage() {
   const collections = await fetch(
-    `${process.env.NEXT_PUBLIC_ADMIN_URL}/api/categories`
+    `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/categories`
   ).then((res) => res.json());
 
   return (

@@ -1,108 +1,42 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
 import DataTable from '@/components/custom-ui/DataTable';
+import Loader from '@/components/custom-ui/Loader';
 import { columns } from '@/components/customers/CustomerColumns';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Separator } from '@radix-ui/react-separator';
 
-async function getCustomers() {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_ADMIN_URL}/api/customers`,
-      {
-        cache: 'no-store', // Ensures fresh data on every request
+export default function CustomerPage() {
+  const [loading, setLoading] = useState(true);
+  const [customers, setCustomers] = useState([]);
+
+  const getCustomers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/customers');
+      if (!res.ok) {
+        throw new Error(`Error fetching customers: ${res.statusText}`);
       }
-    );
-
-    if (!res.ok) {
-      throw new Error(`Error fetching customers: ${res.statusText}`);
+      const data = await res.json();
+      setCustomers(data);
+    } catch (error) {
+      console.error('[customers_GET]', error);
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    return await res.json();
-  } catch (error) {
-    console.error('[customers_GET]', error);
-    return [];
-  }
-}
+  useEffect(() => {
+    getCustomers();
+  }, [getCustomers]);
 
-export default async function CustomerPage() {
-  const customers = await getCustomers();
-  console.log(customers);
-  // Calculate summary statistics
-  const totalCustomers = customers.length;
-  const activeCustomers = customers.filter(
-    (c: any) => c.status === 'active'
-  ).length;
-  const vipCustomers = customers.filter(
-    (c: any) => c.customerType === 'vip'
-  ).length;
-  const totalRevenue = customers.reduce(
-    (acc: number, curr: any) => acc + curr.totalSpent,
-    0
-  );
+  if (loading) return <Loader />;
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Customers</h1>
-        <Button>
-          <Plus className="mr-2 size-4" />
-          Add Customer
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Customers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCustomers}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Customers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeCustomers}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">VIP Customers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{vipCustomers}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('bn-BD', {
-                style: 'currency',
-                currency: 'BDT',
-              }).format(totalRevenue)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Separator />
-
-      <DataTable
-        columns={columns}
-        data={customers}
-        searchKey="name"
-        searchPlaceholder="Search customers..."
-      />
+    <div className="px-10 py-5">
+      <p className="text-heading2-bold">Customers</p>
+      <Separator className="my-5 bg-gray-1" />
+      <DataTable columns={columns} data={customers} searchKey="name" />
     </div>
   );
 }
+export const dynamic = 'force-dynamic';

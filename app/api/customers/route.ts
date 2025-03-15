@@ -7,9 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const GET = async (req: NextRequest) => {
   try {
     await connectToDB();
-    const customers = await Customer.find()
-      .populate('orders')
-      .sort({ createdAt: -1 });
+    const customers = await Customer.find().sort({ createdAt: -1 });
 
     return NextResponse.json(customers, { status: 200 });
   } catch (error) {
@@ -21,70 +19,75 @@ export const GET = async (req: NextRequest) => {
   }
 };
 
-// Create or update a customer
+// Create a new customer (called from Store Project)
 export const POST = async (req: NextRequest) => {
   try {
     await connectToDB();
     const {
-      userId,
-      name,
-      email,
-      phone,
-      address,
-      customerType = 'regular',
-      status = 'active',
-      notes,
+      customerClerkId,
+      products,
+      shippingMethod,
+      deliveryType,
+      shippingAddress,
+      totalAmount,
+      totalDiscount,
     } = await req.json();
 
-    // Validate required fields
-    if (!userId || !name || !email || !phone) {
+    // ✅ Ensure required fields
+    if (!customerClerkId || !products?.length || !totalAmount) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Check if customer exists
-    let customer = await Customer.findOne({ userId });
-
-    if (customer) {
-      // Update existing customer
-      customer = await Customer.findOneAndUpdate(
-        { userId },
-        {
-          name,
-          email,
-          phone,
-          address,
-          customerType,
-          status,
-          notes,
-          updatedAt: new Date(),
-        },
-        { new: true }
-      );
-    } else {
-      // Create new customer
+    // ✅ Check if customer exists, if not create one
+    let customer = await Customer.findOne({ clerkId: customerClerkId });
+    if (!customer) {
       customer = await Customer.create({
-        userId,
-        name,
-        email,
-        phone,
-        address,
-        customerType,
-        status,
-        notes,
-        totalOrders: 0,
-        totalSpent: 0,
+        clerkId: customerClerkId,
+        name: 'Unknown',
+        email: 'unknown@example.com',
+        phone: '0000000000',
+        address: shippingAddress,
       });
     }
 
-    return NextResponse.json(customer, { status: 201 });
+    // ✅ Create order with tracking history
+    const newOrder = await Order.create({
+      customerClerkId,
+      products,
+      shippingMethod,
+      deliveryType,
+      shippingAddress,
+      totalAmount,
+      totalDiscount,
+      status: 'pending',
+      trackingHistory: [
+        {
+          status: 'pending',
+          timestamp: new Date(),
+          location: 'Order Received',
+        },
+      ],
+    });
+
+    // ✅ Link order to customer
+    await Customer.findOneAndUpdate(
+      { clerkId: customerClerkId },
+      { $push: { orders: newOrder._id } }
+    );
+
+    return NextResponse.json(
+      { success: true, order: newOrder },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('[customers_POST]', error);
+    console.error('[orders_POST] API Error:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
 };
+
