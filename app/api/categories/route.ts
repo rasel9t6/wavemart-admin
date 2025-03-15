@@ -1,21 +1,22 @@
+import cors from '@/lib/cros';
 import Category from '@/lib/models/Category';
 import Subcategory from '@/lib/models/Subcategory';
 import { connectToDB } from '@/lib/mongoDB';
-import { auth } from '@clerk/nextjs/server';
+import { getServerSession } from 'next-auth';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 }); // Changed from 403 to 401 for unauthorized
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     await connectToDB();
 
     const data = await req.json();
-  
+
     // Create the main category first
     const categoryData = {
       name: data.name,
@@ -59,20 +60,34 @@ export const POST = async (req: NextRequest) => {
   }
 };
 
-export const GET = async () => {
+export const GET = async (req: NextRequest) => {
   try {
+    // Check API key
+    const apiKey = req.headers.get('x-api-key');
+
+    // Validate API key
+    if (!apiKey || apiKey !== process.env.STORE_API_KEY) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    // Allow CORS from your store domain
+    const corsHeaders = cors(req, [process.env.STORE_URL as string]);
+
     await connectToDB();
     const categories = await Category.find()
       .populate({
         path: 'subcategories',
-        model: Subcategory, // Ensure this matches your Subcategory model name
+        model: Subcategory,
       })
       .sort({ sortOrder: 1 })
       .lean();
 
-    return NextResponse.json(categories);
+    // Return response with CORS headers
+    return NextResponse.json(categories, {
+      headers: corsHeaders,
+    });
   } catch (error: any) {
-    console.error('[Categories_GET]', error);
+    console.error('[Public_Categories_GET]', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch categories' },
       { status: 500 }
