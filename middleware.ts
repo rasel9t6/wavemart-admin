@@ -1,17 +1,49 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
-const isPublicRoute = createRouteMatcher([
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/:path*',
-]);
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const path = req.nextUrl.pathname;
 
-export default clerkMiddleware((auth, request) => {
-  if (!isPublicRoute(request)) {
-    auth().protect();
+    // If authenticated user tries to access root, redirect to dashboard
+    if (token && path === '/') {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+
+    // If not authenticated, allow access to root (sign-in) page only
+    if (!token) {
+      if (path === '/') {
+        return NextResponse.next();
+      }
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+
+    // Only allow super_admin to access protected routes
+    if (token.role !== 'super_admin') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => {
+        return true; // Let the middleware function handle the authorization
+      },
+    },
   }
-});
+);
 
 export const config = {
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api/auth (auth API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
+  ],
 };

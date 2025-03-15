@@ -11,7 +11,7 @@ export const connectToDB = async (): Promise<void> => {
   }
 
   try {
-    await mongoose.connect(process.env.MONGODB_URL || '', {
+    await mongoose.connect(process.env.MONGODB_URI || '', {
       dbName: 'wavemart-admin',
     });
 
