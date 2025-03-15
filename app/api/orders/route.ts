@@ -2,7 +2,13 @@ import Order from '@/lib/models/Order';
 import Customer from '@/lib/models/Customer';
 import { connectToDB } from '@/lib/mongoDB';
 import { NextRequest, NextResponse } from 'next/server';
+import cors from '@/lib/cros';
 
+export async function OPTIONS(req: NextRequest) {
+  // Return 204 No Content for preflight
+  const res = new NextResponse(null, { status: 204 });
+  return cors(req, res);
+}
 // Fetch all orders
 export const GET = async (req: NextRequest) => {
   try {
@@ -50,19 +56,21 @@ export const POST = async (req: NextRequest) => {
 
     // Validate required fields
     if (!userId || !products?.length || !totalAmount) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
+      return cors(req, res);
     }
 
     // Check if customer exists
     const customer = await Customer.findOne({ userId });
     if (!customer) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: 'Customer not found' },
         { status: 404 }
       );
+      return cors(req, res);
     }
 
     // Create order with initial tracking history
@@ -99,15 +107,17 @@ export const POST = async (req: NextRequest) => {
       }
     );
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       { success: true, order: newOrder },
       { status: 201 }
     );
+    return cors(req, res);
   } catch (error) {
     console.error('[orders_POST]', error);
-    return NextResponse.json(
+    const res = NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
     );
+    return cors(req, res);
   }
 };

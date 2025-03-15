@@ -60,7 +60,7 @@ export const POST = async (req: NextRequest) => {
   }
 };
 
-export const GET = async (req: NextRequest) => {
+export const GET = async (req: NextRequest, res: NextResponse) => {
   try {
     // Check API key
     const apiKey = req.headers.get('x-api-key');
@@ -71,7 +71,7 @@ export const GET = async (req: NextRequest) => {
     }
 
     // Allow CORS from your store domain
-    const corsHeaders = cors(req, [process.env.STORE_URL as string]);
+    const corsHeaders = cors(req, res);
 
     await connectToDB();
     const categories = await Category.find()
@@ -83,9 +83,7 @@ export const GET = async (req: NextRequest) => {
       .lean();
 
     // Return response with CORS headers
-    return NextResponse.json(categories, {
-      headers: corsHeaders,
-    });
+    return NextResponse.json(categories, corsHeaders);
   } catch (error: any) {
     console.error('[Public_Categories_GET]', error);
     return NextResponse.json(
