@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
         quantity: cartItem.quantity,
       })),
       client_reference_id: customer.clerkId,
-      success_url: `${process.env.ECOMMERCE_STORE_URL}/payment_success`,
-      cancel_url: `${process.env.ECOMMERCE_STORE_URL}/cart`,
+      success_url: `${process.env.STORE_URL}/payment_success`,
+      cancel_url: `${process.env.STORE_URL}/cart`,
     });
 
     return NextResponse.json(session, { status: 200, headers: corsHeaders });
