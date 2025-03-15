@@ -1,3 +1,4 @@
+import cors from '@/lib/cros';
 import Category from '@/lib/models/Category';
 import Subcategory from '@/lib/models/Subcategory';
 import { connectToDB } from '@/lib/mongoDB';
