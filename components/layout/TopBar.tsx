@@ -2,11 +2,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { UserButton } from '@clerk/nextjs';
 import { Menu } from 'lucide-react';
 
 import { navLinks } from '@/lib/constant';
 import { usePathname } from 'next/navigation';
+import { UserButton } from '../auth/user-button';
 
 export default function TopBar() {
   const [dropdownMenu, setDropdownMenu] = useState(false);
