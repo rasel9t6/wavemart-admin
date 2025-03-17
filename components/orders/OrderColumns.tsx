@@ -2,6 +2,8 @@
 import { OrderColumnType } from '@/lib/types';
 import { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
+import { Badge } from '../ui/badge';
+import { format } from 'date-fns';
 
 export const columns: ColumnDef<OrderColumnType>[] = [
   {
@@ -22,7 +24,7 @@ export const columns: ColumnDef<OrderColumnType>[] = [
     header: 'Products',
     cell: ({ row }) => {
       const products = row.original.products;
-      const totalItems = products.reduce((sum, p) => sum + p.quantity, 0);
+      const totalItems = products.reduce((sum: number, p: any) => sum + p.quantity, 0);
       return `${totalItems} items`;
     },
   },
