@@ -1,5 +1,4 @@
 'use client';
-
 import { ColumnDef } from '@tanstack/react-table';
 import Delete from '../custom-ui/Delete';
 import Link from 'next/link';
@@ -19,17 +18,25 @@ export const columns: ColumnDef<ProductType>[] = [
     ),
   },
   {
-    accessorKey: 'category.name',
+    accessorKey: 'category',
     header: 'Category',
     cell: ({ row }) => {
-      const category = row.original.category?.name || 'N/A';
+      const category =
+        typeof row.original.category === 'object' && row.original.category
+          ? row.original.category.name
+          : typeof row.original.category === 'string'
+            ? row.original.category
+            : 'N/A';
 
-      // Ensure that category.subcategories is an array before mapping
-      const subcategories = Array.isArray(row.original.category?.subcategories)
-        ? row.original.category.subcategories
-            .map((sub: any) => sub.name)
-            .join(', ')
-        : 'N/A';
+      // Only attempt to access subcategories if category is an object
+      const subcategories =
+        typeof row.original.category === 'object' &&
+        row.original.category &&
+        Array.isArray(row.original.category.subcategories)
+          ? row.original.category.subcategories
+              .map((sub: any) => sub.name)
+              .join(', ')
+          : 'N/A';
 
       return (
         <div>
