@@ -13,19 +13,23 @@ const formSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+// Define the form data type
+type FormData = z.infer<typeof formSchema>;
+
 export function SignInForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Add the FormData type to useForm
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
+  } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormData) => {
     try {
       setIsLoading(true);
       const response = await signIn('credentials', {
@@ -33,12 +37,10 @@ export function SignInForm() {
         password: data.password,
         redirect: false,
       });
-
       if (response?.error) {
         toast.error('Invalid credentials');
         return;
       }
-
       router.push('/dashboard');
       router.refresh();
     } catch (error) {
