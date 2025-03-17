@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { connectToDB } from '@/lib/mongoDB';
-import User from '@/models/User';
+import User from '@/lib/models/User';
 
 // Define custom types for NextAuth
 

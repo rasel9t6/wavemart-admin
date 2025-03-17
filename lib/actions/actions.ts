@@ -108,10 +108,10 @@ export async function getSubcategoryDetails(
     await connectToDB();
 
     // Find the parent category first
-    const category = await Category.findOne({
+    const category = (await Category.findOne({
       slug: categorySlug,
       isActive: true,
-    }).lean() as CategoryDocument;
+    }).lean()) as CategoryDocument;
 
     if (!category) {
       throw new Error(`Category not found: ${categorySlug}`);

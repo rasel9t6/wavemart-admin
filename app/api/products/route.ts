@@ -99,8 +99,8 @@ export async function GET(req: NextRequest) {
         path: 'category',
         model: Category,
         populate: {
-          path: 'subcategories', 
-          model: Subcategory, 
+          path: 'subcategories',
+          model: Subcategory,
         },
       })
       .sort({ createdAt: -1 })

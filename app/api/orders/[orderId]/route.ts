@@ -25,7 +25,33 @@ export const GET = async (
 
     return NextResponse.json({ orderDetails, customer }, { status: 200 });
   } catch (error) {
-    console.error('[orderId_GET]', error);
+    console.error('[order_PATCH]', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+};
+
+export const DELETE = async (
+  req: NextRequest,
+  { params }: { params: { orderId: string } }
+) => {
+  try {
+    await connectToDB();
+    const { orderId } = params;
+
+    const deletedOrder = await Order.findByIdAndDelete(orderId);
+    if (!deletedOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { success: true, message: 'Order deleted successfully' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('[order_DELETE]', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

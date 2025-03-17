@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 'use server';
 
 import { v2 as cloud, type UploadApiResponse } from 'cloudinary';
@@ -48,7 +49,11 @@ export const readAllImages = async (filter: string) => {
 
     return resources
       .sort((a, b) => a.public_id.localeCompare(b.public_id))
-      .map(({ secure_url, public_id }) => ({ secure_url, public_id }));
+
+      .map(({ secure_url, public_id }) => ({
+        secure_url: secure_url as string,
+        public_id: public_id as string,
+      }));
   } catch (error) {
     console.log(error);
   }

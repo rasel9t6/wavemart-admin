@@ -25,7 +25,9 @@ export const useMediaStore = create<MediaStore>((set, get) => ({
   // Upload multiple files (images and videos)
   uploadMedia: async (files, folder) => {
     console.log('Original files:', files);
-    const filesArray = (Array.isArray(files) ? files : Array.from(files)) as File[];
+    const filesArray = (
+      Array.isArray(files) ? files : Array.from(files)
+    ) as File[];
     console.log('Converted filesArray:', filesArray);
 
     if (!filesArray.length) {
