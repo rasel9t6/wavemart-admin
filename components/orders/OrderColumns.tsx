@@ -1,22 +1,43 @@
 'use client';
-import { OrderColumnType } from '@/lib/types';
-import { ColumnDef } from '@tanstack/react-table';
-import Link from 'next/link';
-import { Badge } from '../ui/badge';
-import { format } from 'date-fns';
 
-export const columns: ColumnDef<OrderColumnType>[] = [
+import { Badge } from '@/components/ui/badge';
+import { ColumnDef } from '@tanstack/react-table';
+import { format } from 'date-fns';
+import Link from 'next/link';
+
+interface OrderType {
+  orderId: string;
+  customerInfo: {
+    name: string;
+    email: string;
+  };
+  products: Array<{
+    title: string;
+    quantity: number;
+  }>;
+  status: string;
+  paymentStatus: string;
+  totalAmount: number;
+  shippingMethod: string;
+  deliveryType: string;
+  createdAt: Date;
+}
+
+export const columns: ColumnDef<OrderType>[] = [
   {
-    accessorKey: '_id',
-    header: 'Order',
+    accessorKey: 'orderId',
+    header: 'Order ID',
     cell: ({ row }) => (
-      <Link href={`/orders/${row.original._id}`} className="hover:text-blue-1">
-        {row.original._id}
+      <Link
+        href={`/orders/${row.original.orderId}`}
+        className="text-primary hover:underline"
+      >
+        {row.original.orderId}
       </Link>
     ),
   },
   {
-    accessorKey: 'customer',
+    accessorKey: 'customerInfo.name',
     header: 'Customer',
   },
   {
@@ -24,7 +45,7 @@ export const columns: ColumnDef<OrderColumnType>[] = [
     header: 'Products',
     cell: ({ row }) => {
       const products = row.original.products;
-      const totalItems = products.reduce((sum: number, p: any) => sum + p.quantity, 0);
+      const totalItems = products.reduce((sum, p) => sum + p.quantity, 0);
       return `${totalItems} items`;
     },
   },

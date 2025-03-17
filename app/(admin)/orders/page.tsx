@@ -1,39 +1,19 @@
 import DataTable from '@/components/custom-ui/DataTable';
 import { columns } from '@/components/orders/OrderColumns';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { OrderColumnType } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 async function getOrders() {
-  let orders: OrderColumnType[] = [];
-
   try {
-    if (!process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL) {
-      throw new Error('E-commerce admin URL is not configured');
-    }
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/orders`,
-      {
-        cache: 'no-store',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-      }
-    );
+    const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_URL}/api/orders`, {
+      cache: 'no-store', // Ensures fresh data on every request
+    });
 
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Response error:', errorText);
-      throw new Error(
-        `Error fetching orders: ${res.status} - ${res.statusText}`
-      );
+      throw new Error(`Error fetching orders: ${res.statusText}`);
     }
 
-    const data = await res.json();
-    orders = Array.isArray(data) ? data : [];
-    return orders;
+    return await res.json();
   } catch (error) {
     console.error('[orders_GET]', error);
     return [];
@@ -146,5 +126,3 @@ export default async function OrdersPage() {
     </div>
   );
 }
-
-export const dynamic = 'force-dynamic';
