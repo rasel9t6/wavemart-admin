@@ -574,8 +574,8 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
                             ?.icon && (
                             <p className="mt-1 text-sm text-red-600">
                               {
-                                form.formState.errors.subcategories[index].icon
-                                  .message
+                                form.formState.errors?.subcategories?.[index]
+                                  ?.icon?.message
                               }
                             </p>
                           )}
@@ -617,8 +617,8 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
                             ?.thumbnail && (
                             <p className="mt-1 text-sm text-red-600">
                               {
-                                form.formState.errors.subcategories[index]
-                                  .thumbnail.message
+                                form.formState.errors?.subcategories?.[index]
+                                  ?.thumbnail?.message
                               }
                             </p>
                           )}
