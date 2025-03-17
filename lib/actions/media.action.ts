@@ -86,7 +86,7 @@ export async function readAllMedia(prefix?: string) {
       resource_type: 'image',
     }));
 
-    const videoResources = videosResult.resources.map((resource:any) => ({
+    const videoResources = videosResult.resources.map((resource: any) => ({
       ...resource,
       resource_type: 'video',
     }));

@@ -7,7 +7,6 @@ import { revalidatePath } from 'next/cache';
 
 export const POST = async (req: NextRequest) => {
   try {
-   
     const rawBody = await req.text();
     const signature = req.headers.get('Stripe-Signature') as string;
 

@@ -1,4 +1,3 @@
-
 export default function Loading() {
   return (
     <div className="px-8 py-10">

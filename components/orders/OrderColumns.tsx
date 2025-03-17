@@ -112,7 +112,7 @@ export const columns: ColumnDef<OrderType>[] = [
       return (
         <div className="flex flex-col">
           <span className="capitalize">{method}</span>
-          <span className="text-muted-foreground text-xs capitalize">
+          <span className="text-xs capitalize text-muted-foreground">
             {delivery}
           </span>
         </div>

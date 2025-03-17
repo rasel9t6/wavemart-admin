@@ -25,12 +25,19 @@ export default async function OrdersPage() {
 
   // Calculate summary statistics
   const totalOrders = orders.length;
-  const pendingOrders = orders.filter((o: any) => o.status === 'pending').length;
+  const pendingOrders = orders.filter(
+    (o: any) => o.status === 'pending'
+  ).length;
   const processingOrders = orders.filter((o: any) =>
     ['confirmed', 'processing'].includes(o.status)
   ).length;
-  const deliveredOrders = orders.filter((o: any) => o.status === 'delivered').length;
-  const totalRevenue = orders.reduce((acc: number, curr: any) => acc + curr.totalAmount, 0);
+  const deliveredOrders = orders.filter(
+    (o: any) => o.status === 'delivered'
+  ).length;
+  const totalRevenue = orders.reduce(
+    (acc: number, curr: any) => acc + curr.totalAmount,
+    0
+  );
   const averageOrderValue = totalOrders ? totalRevenue / totalOrders : 0;
 
   return (
@@ -50,7 +57,9 @@ export default async function OrdersPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Orders
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingOrders}</div>
@@ -58,7 +67,9 @@ export default async function OrdersPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Processing Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Processing Orders
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{processingOrders}</div>
@@ -66,7 +77,9 @@ export default async function OrdersPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Delivered Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Delivered Orders
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{deliveredOrders}</div>
@@ -78,17 +91,25 @@ export default async function OrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalRevenue)}
+              {new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+              }).format(totalRevenue)}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Average Order Value
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(averageOrderValue)}
+              {new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+              }).format(averageOrderValue)}
             </div>
           </CardContent>
         </Card>
@@ -96,7 +117,12 @@ export default async function OrdersPage() {
 
       <Separator />
 
-      <DataTable columns={columns} data={orders} searchKey="orderId" searchPlaceholder="Search orders..." />
+      <DataTable
+        columns={columns}
+        data={orders}
+        searchKey="orderId"
+        searchPlaceholder="Search orders..."
+      />
     </div>
   );
 }

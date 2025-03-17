@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 import { connectToDB } from '@/lib/mongoDB';
 import User from '@/lib/models/User';
 
-
 // Define custom types for NextAuth
 
 const handler = NextAuth({

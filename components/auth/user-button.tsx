@@ -47,7 +47,7 @@ export const UserButton = () => {
             <p className="text-sm font-medium leading-none">
               {session?.user?.name}
             </p>
-            <p className="text-muted-foreground text-xs leading-none">
+            <p className="text-xs leading-none text-muted-foreground">
               {session?.user?.email}
             </p>
           </div>
@@ -58,7 +58,7 @@ export const UserButton = () => {
           className="cursor-pointer text-red-600 focus:text-red-600"
           disabled={isLoading}
         >
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="mr-2 size-4" />
           {isLoading ? 'Signing out...' : 'Sign out'}
         </DropdownMenuItem>
       </DropdownMenuContent>
