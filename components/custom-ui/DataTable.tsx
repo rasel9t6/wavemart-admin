@@ -26,12 +26,14 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   searchKey: string;
+  searchPlaceholder?: string;
 }
 
 export default function DataTable<TData, TValue>({
   columns,
   data,
   searchKey,
+  searchPlaceholder,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const table = useReactTable({
@@ -50,7 +52,7 @@ export default function DataTable<TData, TValue>({
       {/* Search Input */}
       <div className="flex items-center py-4">
         <Input
-          placeholder="Search..."
+          placeholder={searchPlaceholder || 'Search...'}
           value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
           onChange={(event) =>
             table.getColumn(searchKey)?.setFilterValue(event.target.value)
