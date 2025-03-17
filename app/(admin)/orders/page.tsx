@@ -1,9 +1,11 @@
 import DataTable from '@/components/custom-ui/DataTable';
 import { columns } from '@/components/orders/OrderColumns';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { OrderColumnType } from '@/lib/types';
 
-export default async function OrdersPage() {
-  let orders = [];
+async function getOrders() {
+  let orders: OrderColumnType[] = [];
 
   try {
     if (!process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL) {
@@ -31,6 +33,7 @@ export default async function OrdersPage() {
 
     const data = await res.json();
     orders = Array.isArray(data) ? data : [];
+    return orders;
   } catch (error) {
     console.error('[orders_GET]', error);
     return [];
