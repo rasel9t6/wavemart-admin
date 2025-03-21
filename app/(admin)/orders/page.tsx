@@ -2,13 +2,17 @@ import DataTable from '@/components/custom-ui/DataTable';
 import { columns } from '@/components/orders/OrderColumns';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+const storeApiKey = process.env.STORE_API_KEY;
+if (!storeApiKey) {
+  console.log('storeApiKey', storeApiKey);
+  throw new Error('STORE_API_KEY is not set');
+}
 async function getOrders() {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_URL}/api/orders`, {
       cache: 'no-store', // Ensures fresh data on every request
     });
-
+    console.log('orders res', res);
     if (!res.ok) {
       throw new Error(`Error fetching orders: ${res.statusText}`);
     }

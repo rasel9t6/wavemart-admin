@@ -1,5 +1,5 @@
-import Product from '@/lib/models/Product';
 import { connectToDB } from '@/lib/mongoDB';
+import Product from '@/models/Product';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const GET = async (

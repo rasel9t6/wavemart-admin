@@ -67,7 +67,18 @@ export type OrderItemType = {
 };
 
 export type CustomerType = {
-  clerkId: string;
+  userId: string;
   name: string;
   email: string;
+  phone: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  orders: string[];
+  createdAt: string;
+  updatedAt: string;
 };

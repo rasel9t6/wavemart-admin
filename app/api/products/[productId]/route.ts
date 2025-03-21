@@ -1,8 +1,7 @@
-import Category from '@/lib/models/Category';
-import Product from '@/lib/models/Product';
-import Subcategory from '@/lib/models/Subcategory';
 import { connectToDB } from '@/lib/mongoDB';
-import { auth } from '@clerk/nextjs/server';
+import Category from '@/models/Category';
+import Product from '@/models/Product';
+import Subcategory from '@/models/Subcategory';
 import mongoose from 'mongoose';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
@@ -51,10 +50,7 @@ export async function GET(
 // POST handler
 export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return handleError('Unauthorized', 401);
-    }
+    
 
     await connectToDB();
     const body = await req.json();
@@ -94,11 +90,7 @@ export const PATCH = async (
   { params }: { params: { productId: string } }
 ) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return handleError('Unauthorized', 401);
-    }
-
+   
     await connectToDB();
     const body = await req.json();
 
@@ -139,10 +131,6 @@ export const DELETE = async (
   { params }: { params: { productId: string } }
 ) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return handleError('Unauthorized', 401);
-    }
 
     await connectToDB();
 

@@ -1,103 +1,56 @@
-import Order from '@/lib/models/Order';
 import { connectToDB } from '@/lib/mongoDB';
+import Order from '@/models/Order';
 import { NextRequest, NextResponse } from 'next/server';
+import cors from '@/lib/cros';
 
-// Get a single order by ID
-export const GET = async (
+export async function PATCH(
   req: NextRequest,
   { params }: { params: { orderId: string } }
-) => {
+) {
   try {
+    const headers = cors(req); // Ensure CORS is included in all responses
     await connectToDB();
+
     const { orderId } = params;
+    const { status, location } = await req.json();
 
-    const order = await Order.findOne({ orderId })
-      .populate('products.product')
-      .populate({
-        path: 'userId',
-        model: 'Customer',
-        select: 'name email phone address',
-      });
-
-    if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(order, { status: 200 });
-  } catch (error) {
-    console.error('[order_GET]', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
-};
-
-// Update order (Admin Only)
-export const PATCH = async (
-  req: NextRequest,
-  { params }: { params: { orderId: string } }
-) => {
-  try {
-    await connectToDB();
-    const { orderId } = params;
-    const { status, paymentStatus, trackingHistory, shippingAddress } =
-      await req.json();
-
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
-
-    // Update order fields
-    if (status) order.status = status;
-    if (paymentStatus) order.paymentStatus = paymentStatus;
-    if (shippingAddress) order.shippingAddress = shippingAddress;
-
-    // Add tracking history if provided
-    if (trackingHistory) {
-      order.trackingHistory.push({
-        status,
-        timestamp: new Date(),
-        location: trackingHistory.location || 'Updated by Admin',
-        notes: trackingHistory.notes || '',
+    if (!status) {
+      return new NextResponse(JSON.stringify({ error: 'Status is required' }), {
+        status: 400,
+        headers,
       });
     }
+
+    // Find order by either _id or custom orderId field
+    const order = await Order.findOne({ orderId }); // Change to { orderId } if it's a custom field
+
+    if (!order) {
+      return new NextResponse(JSON.stringify({ error: 'Order not found' }), {
+        status: 404,
+        headers,
+      });
+    }
+
+    // Update status & tracking history
+    order.status = status;
+    order.trackingHistory.push({
+      status,
+      timestamp: new Date(),
+      location: location || 'Status updated',
+    });
 
     await order.save();
 
-    return NextResponse.json({ success: true, order }, { status: 200 });
-  } catch (error) {
-    console.error('[order_PATCH]', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
-};
-
-export const DELETE = async (
-  req: NextRequest,
-  { params }: { params: { orderId: string } }
-) => {
-  try {
-    await connectToDB();
-    const { orderId } = params;
-
-    const deletedOrder = await Order.findByIdAndDelete(orderId);
-    if (!deletedOrder) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(
-      { success: true, message: 'Order deleted successfully' },
-      { status: 200 }
+    return new NextResponse(
+      JSON.stringify({ message: 'Order status updated successfully', order }),
+      { status: 200, headers }
     );
   } catch (error) {
-    console.error('[order_DELETE]', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
+    console.error('[ORDER_STATUS_UPDATE_ERROR]', error);
+    const headers = cors(req);
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers }
     );
   }
-};
+}

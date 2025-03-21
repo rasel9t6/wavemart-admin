@@ -1,7 +1,29 @@
 import mongoose from 'mongoose';
 
+function generateSequentialNumber() {
+  return Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, '0');
+}
+function generateOrderId() {
+  const date = new Date();
+  const year = date.getFullYear().toString().slice(-2); // Last 2 digits of year
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const sequential = generateSequentialNumber();
+
+  // Format: WM-YYMMDD-XXXX (e.g., WM-240215-0001)
+  return `BSM-ORD-${day}-${month}-${year}-${sequential}`;
+}
 const orderSchema = new mongoose.Schema({
-  customerClerkId: String,
+  orderId: {
+    type: String,
+    unique: true,
+    default: generateOrderId,
+    index: true,
+  },
+  userId: String,
+
   products: [
     {
       product: {
@@ -26,7 +48,7 @@ const orderSchema = new mongoose.Schema({
   shippingRate: Number,
   totalDiscount: Number,
   totalAmount: Number,
-
+  paymentMethod: String, // "cash" or "card"
   status: {
     type: String,
     enum: [

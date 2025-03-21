@@ -14,6 +14,7 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
 
   const onSubmit = async (e: FormEvent) => {
+
     e.preventDefault();
     try {
       setIsLoading(true);
@@ -39,7 +40,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+    <div className="mx-auto flex h-screen w-full flex-col justify-center space-y-6 sm:w-[350px]">
       <div className="flex flex-col space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">Admin Login</h1>
         <p className="text-sm text-muted-foreground">

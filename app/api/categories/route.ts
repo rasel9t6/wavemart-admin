@@ -1,22 +1,17 @@
 import cors from '@/lib/cros';
-import Category from '@/lib/models/Category';
-import Subcategory from '@/lib/models/Subcategory';
 import { connectToDB } from '@/lib/mongoDB';
-import { auth } from '@clerk/nextjs/server';
+import Category from '@/models/Category';
+import Subcategory from '@/models/Subcategory';
+
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 }); // Changed from 403 to 401 for unauthorized
-    }
-
     await connectToDB();
 
     const data = await req.json();
-  
+
     // Create the main category first
     const categoryData = {
       name: data.name,
@@ -60,7 +55,7 @@ export const POST = async (req: NextRequest) => {
   }
 };
 
-export const GET = async (req: NextRequest, res: NextResponse) => {
+export const GET = async (req: NextRequest) => {
   try {
     // Check API key
     const apiKey = req.headers.get('x-api-key');
@@ -70,25 +65,35 @@ export const GET = async (req: NextRequest, res: NextResponse) => {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Allow CORS from your store domain
-    const corsHeaders = cors(req, res);
+    // Get CORS headers
+    const corsHeaders = cors(req);
 
     await connectToDB();
+
     const categories = await Category.find()
       .populate({
         path: 'subcategories',
-        model: Subcategory, // Ensure this matches your Subcategory model name
+        model: Subcategory,
       })
       .sort({ sortOrder: 1 })
       .lean();
-
+  
     // Return response with CORS headers
-    return NextResponse.json(categories, corsHeaders);
+    return new NextResponse(JSON.stringify(categories), {
+      status: 200,
+      headers: corsHeaders,
+    });
   } catch (error: any) {
     console.error('[Categories_GET]', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch categories' },
-      { status: 500 }
+
+    // Also include CORS headers in error responses
+    const corsHeaders = cors(req);
+    return new NextResponse(
+      JSON.stringify({ error: error.message || 'Failed to fetch categories' }),
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
     );
   }
 };

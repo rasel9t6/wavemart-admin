@@ -4,9 +4,9 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { FaPlus } from 'react-icons/fa6';
 
-export default async function CollectionPage() {
-  const collections = await fetch(
-    `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/categories`
+export default async function CategoriesPage() {
+  const categories = await fetch(
+    `${process.env.NEXT_PUBLIC_ADMIN_URL}/api/categories`
   ).then((res) => res.json());
 
   return (
@@ -22,7 +22,7 @@ export default async function CollectionPage() {
         </Link>
       </div>
       <Separator className="my-4 bg-gray-1" />
-      <DataTable columns={columns} data={collections || []} searchKey="title" />
+      <DataTable columns={columns} data={categories || []} searchKey="title" />
     </div>
   );
 }

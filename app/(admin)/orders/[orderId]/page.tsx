@@ -1,4 +1,3 @@
-
 import DataTable from '@/components/custom-ui/DataTable';
 import { columns } from '@/components/orderItems/OrderItemsColumns';
 
@@ -8,7 +7,7 @@ export default async function orderDetailsPage({
   params: { orderId: string };
 }) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_E_COMMERCE_ADMIN_URL}/api/orders/${params.orderId}`
+    `${process.env.NEXT_PUBLIC_ADMIN_URL}/api/orders/${params.orderId}`
   );
   const { orderDetails, customer } = await res.json();
   const { street, city, state, postalCode, country } =

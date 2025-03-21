@@ -1,6 +1,6 @@
 import { connectToDB } from '@/lib/mongoDB';
-import Category from '@/lib/models/Category';
-import Subcategory from '@/lib/models/Subcategory';
+import Category from '@/models/Category';
+import Subcategory from '@/models/Subcategory';
 
 async function migrateSubcategories() {
   try {

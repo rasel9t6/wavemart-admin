@@ -129,7 +129,6 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
   const [isSubcategoryVisible, setIsSubcategoryVisible] = useState(
     (initialData?.subcategories?.length ?? 0) > 0
   );
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData
@@ -183,7 +182,7 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
     );
   }
   const handleFormSubmit = async (values: FormValues) => {
-    console.log(values);
+
     try {
       setIsSubmitting(true);
 
@@ -203,7 +202,10 @@ const CategoryForm = ({ initialData }: CategoryFormProps) => {
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.STORE_API_KEY}`,
+        },
         body: JSON.stringify(formattedData),
       });
 

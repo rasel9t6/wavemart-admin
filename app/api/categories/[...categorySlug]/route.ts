@@ -1,11 +1,13 @@
 import { connectToDB } from '@/lib/mongoDB';
-import Product from '@/lib/models/Product';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+
 import { revalidatePath } from 'next/cache';
-import Category from '@/lib/models/Category';
-import Subcategory from '@/lib/models/Subcategory';
+
 import mongoose from 'mongoose';
+import Category from '@/models/Category';
+import Product from '@/models/Product';
+import Subcategory from '@/models/Subcategory';
 
 export const GET = async (
   req: NextRequest,
@@ -84,10 +86,7 @@ export const POST = async (
   { params }: { params: { categorySlug: string[] } }
 ) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
+   
 
     await connectToDB();
     const data = await req.json();
@@ -181,10 +180,7 @@ export const DELETE = async (
   { params }: { params: { categorySlug: string[] } }
 ) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
+   
 
     await connectToDB();
     const slugPath = params.categorySlug;

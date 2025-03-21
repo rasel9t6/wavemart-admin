@@ -7,6 +7,7 @@ const categorySchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+      index: true,
     },
     title: {
       type: String,
@@ -16,6 +17,7 @@ const categorySchema = new mongoose.Schema(
       type: String,
       unique: true,
       lowercase: true,
+      index: true,
     },
     description: {
       type: String,
@@ -77,8 +79,7 @@ categorySchema.pre('save', function (next) {
 });
 
 // Add indexes
-categorySchema.index({ name: 1 });
-categorySchema.index({ slug: 1 });
+
 categorySchema.index({ sortOrder: 1 });
 
 const Category =

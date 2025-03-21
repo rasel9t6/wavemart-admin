@@ -1,9 +1,9 @@
-import Customer from '../models/Customer';
-import Order from '../models/Order';
-import { connectToDB } from '../mongoDB';
-import Product from '@/lib/models/Product';
-import Category from '@/lib/models/Category';
+import Category from '@/models/Category';
+import Customer from '@/models/Customer';
+import Order from '@/models/Order';
+import Product from '@/models/Product';
 import { Types } from 'mongoose';
+import { connectToDB } from '../mongoDB';
 export const getTotalSales = async () => {
   try {
     await connectToDB();

@@ -75,7 +75,6 @@ export default async function HomePage() {
       ...salesData,
       totalCustomers,
     };
-
     return (
       <div className="px-8 py-10">
         <p className="text-heading2-bold">Dashboard</p>

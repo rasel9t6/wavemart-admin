@@ -14,6 +14,7 @@ const subcategorySchema = new mongoose.Schema(
       type: String,
       unique: true,
       lowercase: true,
+      index: true,
     },
     description: String,
     shippingCharge: {
@@ -54,7 +55,6 @@ subcategorySchema.pre('save', function (next) {
 });
 
 // Add indexes
-subcategorySchema.index({ slug: 1 });
 subcategorySchema.index({ category: 1 });
 
 const Subcategory =

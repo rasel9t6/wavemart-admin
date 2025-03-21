@@ -1,14 +1,15 @@
-import Order from '@/lib/models/Order';
-import Customer from '@/lib/models/Customer';
-import { connectToDB } from '@/lib/mongoDB';
 import { NextRequest, NextResponse } from 'next/server';
 import cors from '@/lib/cros';
+import { connectToDB } from '@/lib/mongoDB';
+import Customer from '@/models/Customer';
+import Order from '@/models/Order';
+import { verifyApiKey } from '@/lib/auth';
 
+// Handle CORS for OPTIONS requests (Preflight requests)
 export async function OPTIONS(req: NextRequest) {
-  // Return 204 No Content for preflight
-  const res = new NextResponse(null, { status: 204 });
-  return cors(req, res);
+  return new NextResponse(null, { status: 204, headers: cors(req) });
 }
+
 // Fetch all orders
 export const GET = async (req: NextRequest) => {
   try {
@@ -22,16 +23,19 @@ export const GET = async (req: NextRequest) => {
       .populate({
         path: 'userId',
         model: 'Customer',
-        select: 'name email phone',
+        select: 'name email phone address',
       })
       .sort({ createdAt: -1 });
 
-    return NextResponse.json(orders, { status: 200 });
+    return new NextResponse(JSON.stringify(orders), {
+      status: 200,
+      headers: cors(req),
+    });
   } catch (error) {
     console.error('[orders_GET]', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal Server Error' }),
+      { status: 500, headers: cors(req) }
     );
   }
 };
@@ -39,85 +43,69 @@ export const GET = async (req: NextRequest) => {
 // Create a new order
 export const POST = async (req: NextRequest) => {
   try {
-    await connectToDB();
-    const {
-      userId,
-      customerInfo,
-      products,
-      shippingAddress,
-      shippingMethod,
-      deliveryType,
-      paymentMethod,
-      subtotal,
-      shippingRate,
-      totalDiscount = 0,
-      totalAmount,
-    } = await req.json();
+    const headers = cors(req);
+
+    const authHeader = req.headers.get('authorization');
+    if (!verifyApiKey(authHeader)) {
+      return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers,
+      });
+    }
+
+    const orderData = await req.json();
 
     // Validate required fields
-    if (!userId || !products?.length || !totalAmount) {
-      const res = NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+    if (
+      !orderData.userId ||
+      !orderData.products ||
+      !orderData.shippingAddress
+    ) {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Missing required fields: userId, products, shippingAddress',
+        }),
+        { status: 400, headers }
       );
-      return cors(req, res);
     }
 
-    // Check if customer exists
-    const customer = await Customer.findOne({ userId });
-    if (!customer) {
-      const res = NextResponse.json(
-        { error: 'Customer not found' },
-        { status: 404 }
-      );
-      return cors(req, res);
-    }
+    await connectToDB();
 
-    // Create order with initial tracking history
+    // Create new order
     const newOrder = await Order.create({
-      userId,
-      customerInfo,
-      products,
-      shippingAddress,
-      shippingMethod,
-      deliveryType,
-      paymentMethod,
-      subtotal,
-      shippingRate,
-      totalDiscount,
-      totalAmount,
-      status: 'pending',
-      paymentStatus: 'pending',
+      ...orderData,
       trackingHistory: [
         {
           status: 'pending',
           timestamp: new Date(),
-          location: 'Order Received',
-          notes: 'Order placed successfully',
+          location: 'Order received',
         },
       ],
     });
 
-    // Update customer's order stats
-    await Customer.findOneAndUpdate(
-      { userId },
-      {
-        $push: { orders: newOrder._id },
-        $inc: { totalOrders: 1, totalSpent: totalAmount },
-      }
-    );
+    // Find the customer to update their orders array
+    const customer = await Customer.findOne({ customerId: orderData.userId });
 
-    const res = NextResponse.json(
-      { success: true, order: newOrder },
-      { status: 201 }
+    if (customer) {
+      // Add order to customer's orders array
+      customer.orders.push(newOrder._id);
+      await customer.save();
+    } else {
+      console.error(`Customer with ID ${orderData.userId} not found`);
+    }
+
+    return new NextResponse(
+      JSON.stringify({
+        message: 'Order created successfully',
+        order: newOrder,
+      }),
+      { status: 201, headers }
     );
-    return cors(req, res);
   } catch (error) {
-    console.error('[orders_POST]', error);
-    const res = NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
+    console.error('[ORDER_CREATE_ERROR]', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: cors(req) }
     );
-    return cors(req, res);
   }
 };

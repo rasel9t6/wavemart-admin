@@ -1,24 +1,17 @@
-import Category from '@/lib/models/Category';
-import Product from '@/lib/models/Product';
-import Subcategory from '@/lib/models/Subcategory';
 import { connectToDB } from '@/lib/mongoDB';
-import { auth } from '@clerk/nextjs/server';
+import Category from '@/models/Category';
+import Product from '@/models/Product';
+import Subcategory from '@/models/Subcategory';
+
 import mongoose from 'mongoose';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
-const handleError = (message: string, status: number = 500): NextResponse => {
-  console.error(message);
-  return new NextResponse(message, { status });
-};
 
 // POST handler
 export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return handleError('Unauthorized', 401);
-    }
+   
 
     await connectToDB();
 

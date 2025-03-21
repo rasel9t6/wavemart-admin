@@ -20,7 +20,7 @@ export default function Delete({ id, item }: { id: string; item: string }) {
   async function onDelete() {
     try {
       setLoading(true);
-      const itemType = item === 'product' ? 'products' : 'collections';
+      const itemType = item === 'product' ? 'products' : 'categories';
       const res = await fetch(`/api/${itemType}/${id}`, {
         method: 'DELETE',
       });

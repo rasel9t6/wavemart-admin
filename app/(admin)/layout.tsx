@@ -8,11 +8,13 @@ export default function layout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  
   return (
     <main className="flex text-gray-1 max-lg:flex-col">
       <ToasterProvider />
       <LeftSideBar />
       <TopBar />
+      
       <div className="flex-1 px-8 py-10">{children}</div>
     </main>
   );
