@@ -1,6 +1,5 @@
 import Customer from '@/models/Customer';
 import Order from '@/models/Order';
-import { Types } from 'mongoose';
 import { connectToDB } from '../mongoDB';
 export const getTotalSales = async () => {
   try {
@@ -59,37 +58,4 @@ export async function getCurrencyRate() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_EXCHANGE_RATE_API_URL}`);
   const currencyRate = await res.json();
   return currencyRate?.conversion_rates?.BDT || 17.5;
-}
-
-// lib/actions.ts
-
-interface Subcategory {
-  _id?: string;
-  name: string;
-  title: string;
-  description?: string;
-  icon?: string;
-  thumbnail?: string;
-  products: any[]; // Changed from Types.ObjectId[] to any[] for populated products
-  slug: string;
-  isActive: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface CategoryDocument {
-  _id: Types.ObjectId;
-  name: string;
-  title: string;
-  slug: string;
-  description?: string;
-  icon: string;
-  thumbnail: string;
-  subcategories: Subcategory[];
-  products: Types.ObjectId[];
-  isActive: boolean;
-  sortOrder: number;
-  metadata: Map<string, string>;
-  createdAt: Date;
-  updatedAt: Date;
 }
