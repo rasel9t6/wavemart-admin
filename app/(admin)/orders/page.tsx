@@ -7,10 +7,14 @@ if (!storeApiKey) {
   console.log('storeApiKey', storeApiKey);
   throw new Error('STORE_API_KEY is not set');
 }
+
 async function getOrders() {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_URL}/api/orders`, {
-      cache: 'no-store', // Ensures fresh data on every request
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${storeApiKey}`,
+      },
     });
     console.log('orders res', res);
     if (!res.ok) {
