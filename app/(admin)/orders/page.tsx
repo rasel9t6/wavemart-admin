@@ -2,34 +2,10 @@ import DataTable from '@/components/custom-ui/DataTable';
 import { columns } from '@/components/orders/OrderColumns';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-const storeApiKey = process.env.STORE_API_KEY;
-if (!storeApiKey) {
-  console.log('storeApiKey', storeApiKey);
-  throw new Error('STORE_API_KEY is not set');
-}
-
-async function getOrders() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_URL}/api/orders`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${storeApiKey}`,
-      },
-    });
-    console.log('orders res', res);
-    if (!res.ok) {
-      throw new Error(`Error fetching orders: ${res.statusText}`);
-    }
-
-    return await res.json();
-  } catch (error) {
-    console.error('[orders_GET]', error);
-    return [];
-  }
-}
 
 export default async function OrdersPage() {
-  const orders = await getOrders();
+  const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_URL}/api/orders`);
+  const orders = await res.json();
 
   // Calculate summary statistics
   const totalOrders = orders.length;
