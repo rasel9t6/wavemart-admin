@@ -21,7 +21,7 @@ export const GET = async (req: NextRequest) => {
         model: 'Product',
       })
       .populate({
-        path: 'userId',
+        path: 'customerId',
         model: 'Customer',
         select: 'name email phone address',
       })
