@@ -57,14 +57,7 @@ export const POST = async (req: NextRequest) => {
 
 export const GET = async (req: NextRequest) => {
   try {
-    // Check API key
-    const apiKey = req.headers.get('x-api-key');
-
-    // Validate API key
-    if (!apiKey || apiKey !== process.env.STORE_API_KEY) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
+    
     // Get CORS headers
     const corsHeaders = cors(req);
 

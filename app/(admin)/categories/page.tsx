@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { FaPlus } from 'react-icons/fa6';
 
 export default async function CategoriesPage() {
-  const categories = await fetch(
+  const res = await fetch(
     `${process.env.NEXT_PUBLIC_ADMIN_URL}/api/categories`
-  ).then((res) => res.json());
-
+  );
+  const categories = await res.json();
   return (
     <div className="px-10 py-5">
       <div className="flex items-center justify-between">
