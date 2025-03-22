@@ -4,6 +4,7 @@ import { connectToDB } from '@/lib/mongoDB';
 import Customer from '@/models/Customer';
 import Order from '@/models/Order';
 import { verifyApiKey } from '@/lib/auth';
+import Product from '@/models/Product';
 
 // Handle CORS for OPTIONS requests (Preflight requests)
 export async function OPTIONS(req: NextRequest) {
@@ -18,11 +19,11 @@ export const GET = async (req: NextRequest) => {
     const orders = await Order.find()
       .populate({
         path: 'products.product',
-        model: 'Product',
+        model: Product,
       })
       .populate({
         path: 'customerId',
-        model: 'Customer',
+        model: Customer,
         select: 'name email phone address',
       })
       .sort({ createdAt: -1 });
